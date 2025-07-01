@@ -1,5 +1,5 @@
 
-import { BarChart3, Users, FileText, Home } from 'lucide-react';
+import { BarChart3, Users, FileText, Home, CreditCard } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -15,41 +15,37 @@ import {
 
 const navigation = [
   {
-    title: 'Dashboard',
+    title: 'Inicio',
     url: '/',
     icon: Home,
   },
   {
-    title: 'Clientes',
-    url: '/clientes',
+    title: 'Cuentas por Cobrar',
+    url: '/cuentas-por-cobrar',
     icon: Users,
   },
   {
-    title: 'Documentos',
-    url: '/documentos',
-    icon: FileText,
-  },
-  {
-    title: 'Reportes',
-    url: '/reportes',
-    icon: BarChart3,
+    title: 'Cuentas por Pagar',
+    url: '/cuentas-por-pagar',
+    icon: CreditCard,
   },
 ];
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
+  const isCollapsed = state === 'collapsed';
 
   return (
-    <Sidebar className={collapsed ? 'w-14' : 'w-64'} collapsible>
+    <Sidebar className={isCollapsed ? 'w-14' : 'w-64'} collapsible="icon">
       <SidebarContent>
         <div className="p-4">
-          <h2 className={`font-bold text-lg text-sidebar-foreground ${collapsed ? 'hidden' : 'block'}`}>
-            Cuentas por Cobrar
+          <h2 className={`font-bold text-lg text-sidebar-foreground ${isCollapsed ? 'hidden' : 'block'}`}>
+            Sistema Financiero
           </h2>
         </div>
         
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? 'hidden' : 'block'}>
+          <SidebarGroupLabel className={isCollapsed ? 'hidden' : 'block'}>
             Navegación
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -69,7 +65,7 @@ export function AppSidebar() {
                       end
                     >
                       <item.icon className="h-5 w-5" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

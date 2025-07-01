@@ -6,11 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import DashboardPage from "./pages/DashboardPage";
-import ClientesPage from "./pages/ClientesPage";
+import HomePage from "./pages/HomePage";
+import CuentasPorCobrarPage from "./pages/CuentasPorCobrarPage";
+import CuentasPorPagarPage from "./pages/CuentasPorPagarPage";
 import ClienteDetailPage from "./pages/ClienteDetailPage";
-import DocumentosPage from "./pages/DocumentosPage";
-import ReportesPage from "./pages/ReportesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,17 +28,16 @@ const App = () => (
                 <div className="flex h-14 items-center px-4">
                   <SidebarTrigger />
                   <div className="ml-4">
-                    <h2 className="text-lg font-semibold">Sistema de Cuentas por Cobrar</h2>
+                    <h2 className="text-lg font-semibold">Sistema de Gestión Financiera</h2>
                   </div>
                 </div>
               </header>
               <div className="flex-1 space-y-4 p-4 pt-6">
                 <Routes>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/clientes" element={<ClientesPage />} />
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/cuentas-por-cobrar" element={<CuentasPorCobrarPage />} />
+                  <Route path="/cuentas-por-pagar" element={<CuentasPorPagarPage />} />
                   <Route path="/clientes/:nit" element={<ClienteDetailPage />} />
-                  <Route path="/documentos" element={<DocumentosPage />} />
-                  <Route path="/reportes" element={<ReportesPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>
