@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import HomePage from "./pages/HomePage";
 import CuentasPorCobrarPage from "./pages/CuentasPorCobrarPage";
 import CuentasPorPagarPage from "./pages/CuentasPorPagarPage";
+import ClientesPage from "./pages/ClientesPage";
 import ClienteDetailPage from "./pages/ClienteDetailPage";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,7 @@ const App = () => (
                   <Route path="/" element={<HomePage />} />
                   <Route path="/cuentas-por-cobrar" element={<CuentasPorCobrarPage />} />
                   <Route path="/cuentas-por-pagar" element={<CuentasPorPagarPage />} />
+                  <Route path="/clientes" element={<ClientesPage />} />
                   <Route path="/clientes/:nit" element={<ClienteDetailPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
