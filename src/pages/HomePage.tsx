@@ -1,11 +1,19 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, CreditCard, Plus, BarChart3, FileText } from 'lucide-react';
+import { Users, CreditCard, Plus, BarChart3, FileText, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { DatabaseConfig } from '@/components/DatabaseConfig';
+import { databaseService } from '@/services/database';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [isDbConfigured, setIsDbConfigured] = useState(false);
+
+  useEffect(() => {
+    setIsDbConfigured(databaseService.isConfigured());
+  }, []);
 
   const mainFunctions = [
     {
@@ -14,7 +22,7 @@ const HomePage = () => {
       description: 'Gestión y consulta de clientes y documentos por cobrar',
       icon: Users,
       color: 'bg-blue-500',
-      available: true,
+      available: isDbConfigured,
       route: '/cuentas-por-cobrar',
       features: ['Dashboard ejecutivo', 'Lista de clientes', 'Detalle de documentos', 'Filtros avanzados']
     },
@@ -36,15 +44,23 @@ const HomePage = () => {
     }
   };
 
+  const handleDatabaseConfigured = () => {
+    setIsDbConfigured(true);
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Sistema de Gestión Financiera</h1>
         <p className="text-muted-foreground">
-          Selecciona una función para acceder a sus herramientas y reportes
+          Configura tu base de datos y accede a las herramientas de gestión
         </p>
       </div>
 
+      {/* Configuración de Base de Datos */}
+      <DatabaseConfig onConfigured={handleDatabaseConfigured} />
+
+      {/* Funciones principales */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {mainFunctions.map((func) => (
           <Card 
@@ -63,7 +79,7 @@ const HomePage = () => {
                   <CardTitle className="text-xl">{func.title}</CardTitle>
                   {!func.available && (
                     <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                      Próximamente
+                      {func.id === 'cuentas-cobrar' && !isDbConfigured ? 'Configurar BD' : 'Próximamente'}
                     </span>
                   )}
                 </div>
@@ -92,7 +108,8 @@ const HomePage = () => {
                   disabled={!func.available}
                   variant={func.available ? "default" : "secondary"}
                 >
-                  {func.available ? 'Acceder' : 'En desarrollo'}
+                  {func.available ? 'Acceder' : 
+                   func.id === 'cuentas-cobrar' && !isDbConfigured ? 'Configurar BD primero' : 'En desarrollo'}
                 </Button>
               </div>
             </CardContent>
