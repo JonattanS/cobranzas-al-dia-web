@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, CreditCard, Plus, BarChart3, FileText, Database } from 'lucide-react';
+import { Users, CreditCard, Plus, BarChart3, FileText, Database, Code } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { DatabaseConfig } from '@/components/DatabaseConfig';
@@ -35,6 +35,16 @@ const HomePage = () => {
       available: false,
       route: '/cuentas-por-pagar',
       features: ['Dashboard ejecutivo', 'Lista de proveedores', 'Detalle de documentos', 'Filtros avanzados']
+    },
+    {
+      id: 'query-manual',
+      title: 'Query Manual',
+      description: 'Ejecuta consultas SQL personalizadas en tu base de datos PostgreSQL',
+      icon: Code,
+      color: 'bg-purple-500',
+      available: isDbConfigured,
+      route: '/query-manual',
+      features: ['Editor SQL', 'Filtros dinámicos', 'Exportar resultados', 'Historial de consultas']
     }
   ];
 
@@ -79,7 +89,7 @@ const HomePage = () => {
                   <CardTitle className="text-xl">{func.title}</CardTitle>
                   {!func.available && (
                     <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                      {func.id === 'cuentas-cobrar' && !isDbConfigured ? 'Configurar BD' : 'Próximamente'}
+                      {(func.id === 'cuentas-cobrar' || func.id === 'query-manual') && !isDbConfigured ? 'Configurar BD' : 'Próximamente'}
                     </span>
                   )}
                 </div>
@@ -109,53 +119,12 @@ const HomePage = () => {
                   variant={func.available ? "default" : "secondary"}
                 >
                   {func.available ? 'Acceder' : 
-                   func.id === 'cuentas-cobrar' && !isDbConfigured ? 'Configurar BD primero' : 'En desarrollo'}
+                   (func.id === 'cuentas-cobrar' || func.id === 'query-manual') && !isDbConfigured ? 'Configurar BD primero' : 'En desarrollo'}
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
-
-        {/* Placeholder para futuras funciones */}
-        <Card className="border-dashed border-2 cursor-pointer transition-all hover:shadow-lg hover:scale-105">
-          <CardHeader className="pb-3">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg bg-gray-200 text-gray-600">
-                <Plus className="h-6 w-6" />
-              </div>
-              <CardTitle className="text-xl">Próximas Funciones</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <CardDescription className="text-sm mb-4">
-              Nuevas funcionalidades se agregarán próximamente
-            </CardDescription>
-            
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">En planificación:</p>
-              <ul className="text-sm space-y-1">
-                <li className="flex items-center space-x-2">
-                  <FileText className="h-3 w-3 text-blue-500" />
-                  <span>Reportes avanzados</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <BarChart3 className="h-3 w-3 text-blue-500" />
-                  <span>Análisis predictivo</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Users className="h-3 w-3 text-blue-500" />
-                  <span>Gestión de usuarios</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="mt-4">
-              <Button className="w-full" variant="outline" disabled>
-                Próximamente
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

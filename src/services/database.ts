@@ -1,4 +1,3 @@
-
 interface DatabaseConfig {
   host: string;
   port: number;
@@ -52,6 +51,39 @@ class DatabaseService {
   clearConfig() {
     this.config = null;
     localStorage.removeItem('db_config');
+  }
+
+  // Método para ejecutar queries personalizados
+  async executeCustomQuery(query: string): Promise<any[]> {
+    if (!this.isConfigured()) {
+      throw new Error('Base de datos no configurada');
+    }
+
+    // Simular delay de red
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Aquí iría la llamada real a tu API backend
+    console.log('Ejecutando query personalizado:', query);
+    console.log('Configuración DB:', this.config);
+    
+    // Por ahora retornamos datos de ejemplo
+    // En producción, aquí harías la llamada HTTP a tu backend
+    return [
+      {
+        id: 1,
+        ter_nit: '900123456',
+        ter_raz: 'EMPRESA EJEMPLO S.A.S',
+        clc_cod: 'FAC',
+        doc_num: 1001,
+        doc_fec: '2024-01-15',
+        cta_cod: '13050501',
+        cta_nom: 'CLIENTES NACIONALES',
+        mov_val: 5000000,
+        mov_val_ext: 5000000,
+        mov_obs: 'Venta de mercancía',
+        mov_det: 'Factura de venta productos varios'
+      }
+    ];
   }
 
   // Simulación de consultas - En producción, estas llamarían a tu API backend

@@ -11,6 +11,7 @@ import CuentasPorCobrarPage from "./pages/CuentasPorCobrarPage";
 import CuentasPorPagarPage from "./pages/CuentasPorPagarPage";
 import ClientesPage from "./pages/ClientesPage";
 import ClienteDetailPage from "./pages/ClienteDetailPage";
+import QueryManualPage from "./pages/QueryManualPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
                   <Route path="/cuentas-por-pagar" element={<CuentasPorPagarPage />} />
                   <Route path="/clientes" element={<ClientesPage />} />
                   <Route path="/clientes/:nit" element={<ClienteDetailPage />} />
+                  <Route path="/query-manual" element={<QueryManualPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>
