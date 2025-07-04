@@ -1,3 +1,4 @@
+import { BACKEND_URL } from '../config'; 
 
 interface DatabaseConfig {
   host: string;
@@ -76,7 +77,8 @@ class DatabaseService {
 
       // Aquí necesitarías un endpoint backend que maneje la conexión a PostgreSQL
       // Por ahora simularemos el comportamiento, pero deberías crear un backend
-      const response = await fetch('/api/execute-query', {
+
+      const response = await fetch(`${BACKEND_URL}/api/execute-query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

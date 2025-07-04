@@ -13,7 +13,7 @@ interface QueryEditorProps {
   isLoading: boolean;
   error: string;
   onSaveModule: () => void;
-  onExportResults: () => void;
+  onExportResults?: () => void; 
   hasResults: boolean;
   resultsCount: number;
 }

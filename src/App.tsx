@@ -30,7 +30,7 @@ const App = () => (
                 <div className="flex h-14 items-center px-4">
                   <SidebarTrigger />
                   <div className="ml-4">
-                    <h2 className="text-lg font-semibold">Sistema de Gestión Financiera</h2>
+                    <h2 className="text-lg font-semibold">Nova Web</h2>
                   </div>
                 </div>
               </header>

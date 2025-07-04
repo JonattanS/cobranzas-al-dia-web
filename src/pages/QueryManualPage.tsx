@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -13,11 +12,14 @@ import { ModulesPanel } from '@/components/query-manual/ModulesPanel';
 import { ResultsTable } from '@/components/query-manual/ResultsTable';
 import { SaveModuleDialog } from '@/components/query-manual/SaveModuleDialog';
 
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 const QueryManualPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
-  
+
   const [query, setQuery] = useState(`SELECT
   ter_nit,
   ter_raz,
@@ -31,14 +33,15 @@ GROUP BY
   ter_nit, ter_raz
 ORDER BY
   ter_raz;`);
-  
+
   const [results, setResults] = useState<any[]>([]);
+  const [filteredResults, setFilteredResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [savedModules, setSavedModules] = useState<SavedModule[]>(databaseService.getSavedModules());
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [moduleForm, setModuleForm] = useState({ name: '', description: '' });
-  
+
   const [filters, setFilters] = useState({
     ter_nit: '',
     fecha_desde: '',
@@ -48,6 +51,8 @@ ORDER BY
     max_valor: ''
   });
 
+  const [activeTab, setActiveTab] = useState<'query' | 'filters' | 'modules'>('query');
+
   useEffect(() => {
     if (location.state?.loadModule) {
       const module = location.state.loadModule as SavedModule;
@@ -56,6 +61,7 @@ ORDER BY
     }
   }, [location.state, navigate]);
 
+  // Ejecutar query y mostrar resultados en la pestaña de filtros
   const executeQuery = async () => {
     if (!databaseService.isConfigured()) {
       setError('Base de datos no configurada');
@@ -64,20 +70,22 @@ ORDER BY
 
     setIsLoading(true);
     setError('');
-    
+
     try {
       const result = await databaseService.executeCustomQuery(query);
       setResults(result);
-      
+      setFilteredResults(result); // Inicialmente sin filtro
+      setActiveTab('filters');    // Cambiar a pestaña filtros para mostrar resultados
+
       toast({
         title: "Query ejecutado",
         description: `Se obtuvieron ${result.length} registros`,
       });
-      
+
     } catch (err) {
       const errorMessage = (err as Error).message;
       setError(errorMessage);
-      
+
       toast({
         title: "Error ejecutando query",
         description: errorMessage,
@@ -86,6 +94,37 @@ ORDER BY
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Filtrar resultados en frontend según filtros
+  const applyFilters = () => {
+    let filtered = results;
+
+    if (filters.ter_nit) {
+      filtered = filtered.filter(r => r.ter_nit?.toString().includes(filters.ter_nit));
+    }
+    if (filters.fecha_desde) {
+      filtered = filtered.filter(r => r.doc_fec >= filters.fecha_desde);
+    }
+    if (filters.fecha_hasta) {
+      filtered = filtered.filter(r => r.doc_fec <= filters.fecha_hasta);
+    }
+    if (filters.clc_cod) {
+      filtered = filtered.filter(r => r.clc_cod === filters.clc_cod);
+    }
+    if (filters.min_valor) {
+      filtered = filtered.filter(r => Math.abs(r.mov_val) >= Number(filters.min_valor));
+    }
+    if (filters.max_valor) {
+      filtered = filtered.filter(r => Math.abs(r.mov_val) <= Number(filters.max_valor));
+    }
+
+    setFilteredResults(filtered);
+
+    toast({
+      title: "Filtros aplicados",
+      description: `Se filtraron ${filtered.length} registros`,
+    });
   };
 
   const saveAsModule = () => {
@@ -128,7 +167,7 @@ ORDER BY
     setFilters(module.filters || {});
     databaseService.updateModuleLastUsed(module.id);
     setSavedModules(databaseService.getSavedModules());
-    
+
     toast({
       title: "Módulo cargado",
       description: `Se cargó el módulo "${module.name}"`,
@@ -138,75 +177,56 @@ ORDER BY
   const deleteModule = (moduleId: string) => {
     databaseService.deleteModule(moduleId);
     setSavedModules(databaseService.getSavedModules());
-    
+
     toast({
       title: "Módulo eliminado",
       description: "El módulo se eliminó correctamente",
     });
   };
 
-  const applyFilters = () => {
-    let filteredQuery = query;
-    const conditions = [];
-    
-    if (filters.ter_nit) {
-      conditions.push(`ter_nit LIKE '%${filters.ter_nit}%'`);
-    }
-    
-    if (filters.fecha_desde) {
-      conditions.push(`doc_fec >= '${filters.fecha_desde}'`);
-    }
-    
-    if (filters.fecha_hasta) {
-      conditions.push(`doc_fec <= '${filters.fecha_hasta}'`);
-    }
-    
-    if (filters.clc_cod) {
-      conditions.push(`clc_cod = '${filters.clc_cod}'`);
-    }
-    
-    if (filters.min_valor) {
-      conditions.push(`ABS(mov_val) >= ${filters.min_valor}`);
-    }
-    
-    if (filters.max_valor) {
-      conditions.push(`ABS(mov_val) <= ${filters.max_valor}`);
-    }
-    
-    if (conditions.length > 0) {
-      if (filteredQuery.toUpperCase().includes('WHERE')) {
-        filteredQuery += ` AND ${conditions.join(' AND ')}`;
-      } else {
-        filteredQuery += ` WHERE ${conditions.join(' AND ')}`;
-      }
-    }
-    
-    setQuery(filteredQuery);
-    
-    toast({
-      title: "Filtros aplicados",
-      description: "Se aplicaron los filtros al query",
-    });
-  };
-
+  // Exportar CSV
   const exportResults = () => {
-    if (results.length === 0) return;
-    
+    if (filteredResults.length === 0) return;
+
     const csv = [
-      Object.keys(results[0]).join(','),
-      ...results.map(row => Object.values(row).join(','))
+      Object.keys(filteredResults[0]).join(','),
+      ...filteredResults.map(row => Object.values(row).join(','))
     ].join('\n');
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `query_results_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    
+
     toast({
       title: "Datos exportados",
       description: "Los resultados se exportaron a CSV",
+    });
+  };
+
+  // Exportar PDF
+  const exportPDF = () => {
+    if (filteredResults.length === 0) return;
+
+    const doc = new jsPDF();
+    const columns = Object.keys(filteredResults[0]);
+    const rows = filteredResults.map(row => columns.map(col => row[col] ?? ''));
+
+    autoTable(doc, {
+      head: [columns],
+      body: rows,
+      startY: 20,
+      margin: { horizontal: 10 },
+      styles: { fontSize: 8 }
+    });
+
+    doc.save(`query_results_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    toast({
+      title: "Datos exportados",
+      description: "Los resultados se exportaron a PDF",
     });
   };
 
@@ -225,13 +245,18 @@ ORDER BY
         </div>
       </div>
 
-      <Tabs defaultValue="query" className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value: string) => setActiveTab(value as 'query' | 'filters' | 'modules')}
+        className="space-y-4"
+      >
+
         <TabsList>
           <TabsTrigger value="query">Editor SQL</TabsTrigger>
           <TabsTrigger value="filters">Filtros Dinámicos</TabsTrigger>
           <TabsTrigger value="modules">Módulos Guardados ({savedModules.length})</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="query" className="space-y-4">
           <QueryEditor
             query={query}
@@ -240,20 +265,27 @@ ORDER BY
             isLoading={isLoading}
             error={error}
             onSaveModule={() => setShowSaveDialog(true)}
-            onExportResults={exportResults}
+            
             hasResults={results.length > 0}
             resultsCount={results.length}
           />
-          
-          <ResultsTable results={results} />
         </TabsContent>
-        
+
         <TabsContent value="filters">
+          <div className="flex gap-2 mb-4">
+            <Button onClick={exportResults} disabled={filteredResults.length === 0}>
+              Exportar CSV
+            </Button>
+            <Button onClick={exportPDF} disabled={filteredResults.length === 0}>
+              Exportar PDF
+            </Button>
+          </div>
           <FilterPanel
             filters={filters}
             setFilters={setFilters}
             onApplyFilters={applyFilters}
           />
+          <ResultsTable results={filteredResults} />
         </TabsContent>
 
         <TabsContent value="modules">

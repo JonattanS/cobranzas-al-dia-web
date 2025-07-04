@@ -24,11 +24,7 @@ const navigation = [
     url: '/cuentas-por-cobrar',
     icon: Users,
   },
-  {
-    title: 'Cuentas por Pagar',
-    url: '/cuentas-por-pagar',
-    icon: CreditCard,
-  },
+  
 ];
 
 export function AppSidebar() {
@@ -40,7 +36,7 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="p-4">
           <h2 className={`font-bold text-lg text-sidebar-foreground ${isCollapsed ? 'hidden' : 'block'}`}>
-            Sistema Financiero
+            Modulos
           </h2>
         </div>
         

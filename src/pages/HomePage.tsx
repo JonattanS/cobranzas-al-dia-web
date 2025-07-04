@@ -28,16 +28,7 @@ const HomePage = () => {
       route: '/cuentas-por-cobrar',
       features: ['Dashboard ejecutivo', 'Lista de clientes', 'Detalle de documentos', 'Filtros avanzados']
     },
-    {
-      id: 'cuentas-pagar',
-      title: 'Cuentas por Pagar',
-      description: 'Gestión y consulta de proveedores y documentos por pagar',
-      icon: CreditCard,
-      color: 'bg-red-500',
-      available: false,
-      route: '/cuentas-por-pagar',
-      features: ['Dashboard ejecutivo', 'Lista de proveedores', 'Detalle de documentos', 'Filtros avanzados']
-    },
+    
     {
       id: 'query-manual',
       title: 'Query Manual',
@@ -69,7 +60,7 @@ const HomePage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Sistema de Gestión Financiera</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Configuracion BD test</h1>
         <p className="text-muted-foreground">
           Configura tu base de datos y accede a las herramientas de gestión
         </p>
