@@ -1,38 +1,42 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Play, Download, History, Filter } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Play, Download, History, Filter, Save, Trash2, FolderOpen } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { databaseService } from '@/services/database';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { databaseService, type SavedModule } from '@/services/database';
+import { useToast } from '@/hooks/use-toast';
 
 const QueryManualPage = () => {
   const navigate = useNavigate();
-  const [query, setQuery] = useState(`SELECT 
+  const { toast } = useToast();
+  const location = useLocation();
+  const [query, setQuery] = useState(`SELECT
   ter_nit,
   ter_raz,
-  clc_cod,
-  doc_num,
-  doc_fec,
-  cta_cod,
-  cta_nom,
-  mov_val,
-  mov_val_ext,
-  mov_obs,
-  mov_det
-FROM public.con_mov 
-WHERE doc_fec >= '2024-01-01'
-ORDER BY doc_fec DESC
-LIMIT 100;`);
+  SUM(mov_val) AS saldo_por_cobrar
+FROM
+  public.con_mov
+WHERE
+  anf_cla = 1
+  AND anf_cre = 1
+GROUP BY
+  ter_nit, ter_raz
+ORDER BY
+  ter_raz;`);
   
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [savedModules, setSavedModules] = useState<SavedModule[]>(databaseService.getSavedModules());
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [moduleForm, setModuleForm] = useState({ name: '', description: '' });
+  
   const [filters, setFilters] = useState({
     ter_nit: '',
     fecha_desde: '',
@@ -41,6 +45,14 @@ LIMIT 100;`);
     min_valor: '',
     max_valor: ''
   });
+
+  useEffect(() => {
+    if (location.state?.loadModule) {
+      const module = location.state.loadModule as SavedModule;
+      loadModule(module);
+      navigate('/query-manual', { replace: true });
+    }
+  }, [location.state, navigate, loadModule]);
 
   const executeQuery = async () => {
     if (!databaseService.isConfigured()) {
@@ -52,48 +64,83 @@ LIMIT 100;`);
     setError('');
     
     try {
-      // Simular ejecución de query - En producción aquí harías la llamada real
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await databaseService.executeCustomQuery(query);
+      setResults(result);
       
-      console.log('Ejecutando query:', query);
-      console.log('Con configuración:', databaseService.getConfig());
+      toast({
+        title: "Query ejecutado",
+        description: `Se obtuvieron ${result.length} registros`,
+      });
       
-      // Datos de ejemplo basados en tu estructura real
-      const mockResults = [
-        {
-          ter_nit: '900123456',
-          ter_raz: 'EMPRESA EJEMPLO S.A.S',
-          clc_cod: 'FAC',
-          doc_num: 1001,
-          doc_fec: '2024-01-15',
-          cta_cod: '13050501',
-          cta_nom: 'CLIENTES NACIONALES',
-          mov_val: 5000000,
-          mov_val_ext: 5000000,
-          mov_obs: 'Venta de mercancía',
-          mov_det: 'Factura de venta productos varios'
-        },
-        {
-          ter_nit: '800987654',
-          ter_raz: 'COMERCIAL DEMO LTDA',
-          clc_cod: 'REC',
-          doc_num: 2001,
-          doc_fec: '2024-01-20',
-          cta_cod: '11100505',
-          cta_nom: 'BANCOS',
-          mov_val: -3000000,
-          mov_val_ext: -3000000,
-          mov_obs: 'Pago recibido',
-          mov_det: 'Recibo de caja por pago factura'
-        }
-      ];
-      
-      setResults(mockResults);
     } catch (err) {
-      setError('Error ejecutando la consulta: ' + (err as Error).message);
+      const errorMessage = (err as Error).message;
+      setError(errorMessage);
+      
+      toast({
+        title: "Error ejecutando query",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const saveAsModule = () => {
+    if (!moduleForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "El nombre del módulo es requerido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const moduleId = databaseService.saveModule({
+        name: moduleForm.name,
+        description: moduleForm.description,
+        query,
+        filters
+      });
+
+      setSavedModules(databaseService.getSavedModules());
+      setShowSaveDialog(false);
+      setModuleForm({ name: '', description: '' });
+
+      toast({
+        title: "Módulo guardado",
+        description: `El módulo "${moduleForm.name}" se guardó correctamente`,
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el módulo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadModule = (module: SavedModule) => {
+    setQuery(module.query);
+    setFilters(module.filters || {});
+    databaseService.updateModuleLastUsed(module.id);
+    setSavedModules(databaseService.getSavedModules());
+    
+    toast({
+      title: "Módulo cargado",
+      description: `Se cargó el módulo "${module.name}"`,
+    });
+  };
+
+  const deleteModule = (moduleId: string) => {
+    databaseService.deleteModule(moduleId);
+    setSavedModules(databaseService.getSavedModules());
+    
+    toast({
+      title: "Módulo eliminado",
+      description: "El módulo se eliminó correctamente",
+    });
   };
 
   const applyFilters = () => {
@@ -136,6 +183,11 @@ LIMIT 100;`);
     }
     
     setQuery(filteredQuery);
+    
+    toast({
+      title: "Filtros aplicados",
+      description: "Se aplicaron los filtros al query",
+    });
   };
 
   const exportResults = () => {
@@ -152,6 +204,11 @@ LIMIT 100;`);
     a.href = url;
     a.download = `query_results_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    
+    toast({
+      title: "Datos exportados",
+      description: "Los resultados se exportaron a CSV",
+    });
   };
 
   return (
@@ -164,7 +221,7 @@ LIMIT 100;`);
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Query Manual</h1>
           <p className="text-muted-foreground">
-            Ejecuta consultas SQL personalizadas en tu base de datos PostgreSQL
+            Ejecuta consultas SQL personalizadas y crea módulos reutilizables
           </p>
         </div>
       </div>
@@ -173,6 +230,7 @@ LIMIT 100;`);
         <TabsList>
           <TabsTrigger value="query">Editor SQL</TabsTrigger>
           <TabsTrigger value="filters">Filtros Dinámicos</TabsTrigger>
+          <TabsTrigger value="modules">Módulos Guardados ({savedModules.length})</TabsTrigger>
         </TabsList>
         
         <TabsContent value="query" className="space-y-4">
@@ -198,11 +256,57 @@ LIMIT 100;`);
                 />
               </div>
               
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-2">
                 <Button onClick={executeQuery} disabled={isLoading || !query.trim()}>
                   <Play className="h-4 w-4 mr-2" />
                   {isLoading ? 'Ejecutando...' : 'Ejecutar Query'}
                 </Button>
+                
+                <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" disabled={!query.trim()}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar como Módulo
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Guardar Query como Módulo</DialogTitle>
+                      <DialogDescription>
+                        Crea un módulo reutilizable con este query y filtros
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="module-name">Nombre del Módulo</Label>
+                        <Input
+                          id="module-name"
+                          value={moduleForm.name}
+                          onChange={(e) => setModuleForm({...moduleForm, name: e.target.value})}
+                          placeholder="Ej: Cuentas por Cobrar Detallado"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="module-description">Descripción</Label>
+                        <Textarea
+                          id="module-description"
+                          value={moduleForm.description}
+                          onChange={(e) => setModuleForm({...moduleForm, description: e.target.value})}
+                          placeholder="Describe qué hace este módulo..."
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={saveAsModule}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Guardar Módulo
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 
                 {results.length > 0 && (
                   <Button variant="outline" onClick={exportResults}>
@@ -213,14 +317,13 @@ LIMIT 100;`);
               </div>
 
               {error && (
-                <Alert className="border-red-200 bg-red-50">
-                  <AlertDescription className="text-red-800">{error}</AlertDescription>
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
             </CardContent>
           </Card>
 
-          {/* Resultados */}
           {results.length > 0 && (
             <Card>
               <CardHeader>
@@ -336,6 +439,63 @@ LIMIT 100;`);
                 <Filter className="h-4 w-4 mr-2" />
                 Aplicar Filtros al Query
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="modules" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FolderOpen className="h-5 w-5" />
+                <span>Módulos Guardados</span>
+              </CardTitle>
+              <CardDescription>
+                Gestiona tus consultas guardadas como módulos reutilizables
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {savedModules.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No tienes módulos guardados aún. Crea tu primer módulo desde el editor SQL.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {savedModules.map((module) => (
+                    <div key={module.id} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{module.name}</h3>
+                          <p className="text-sm text-muted-foreground">{module.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Creado: {new Date(module.createdAt).toLocaleDateString()} | 
+                            Último uso: {new Date(module.lastUsed).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => loadModule(module)}
+                          >
+                            <Play className="h-4 w-4 mr-1" />
+                            Cargar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            onClick={() => deleteModule(module.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded text-xs font-mono">
+                        {module.query.substring(0, 100)}...
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

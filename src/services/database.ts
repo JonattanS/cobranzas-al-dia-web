@@ -1,3 +1,4 @@
+
 interface DatabaseConfig {
   host: string;
   port: number;
@@ -19,6 +20,16 @@ interface ConMovRecord {
   mov_val_ext: number;
   mov_obs: string;
   mov_det: string;
+}
+
+interface SavedModule {
+  id: string;
+  name: string;
+  description: string;
+  query: string;
+  filters: any;
+  createdAt: string;
+  lastUsed: string;
 }
 
 class DatabaseService {
@@ -53,37 +64,81 @@ class DatabaseService {
     localStorage.removeItem('db_config');
   }
 
-  // Método para ejecutar queries personalizados
+  // Método para ejecutar queries personalizados - CONEXIÓN REAL
   async executeCustomQuery(query: string): Promise<any[]> {
     if (!this.isConfigured()) {
       throw new Error('Base de datos no configurada');
     }
 
-    // Simular delay de red
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      console.log('Ejecutando query en base de datos real:', query);
+      console.log('Configuración DB:', this.config);
 
-    // Aquí iría la llamada real a tu API backend
-    console.log('Ejecutando query personalizado:', query);
-    console.log('Configuración DB:', this.config);
-    
-    // Por ahora retornamos datos de ejemplo
-    // En producción, aquí harías la llamada HTTP a tu backend
-    return [
-      {
-        id: 1,
-        ter_nit: '900123456',
-        ter_raz: 'EMPRESA EJEMPLO S.A.S',
-        clc_cod: 'FAC',
-        doc_num: 1001,
-        doc_fec: '2024-01-15',
-        cta_cod: '13050501',
-        cta_nom: 'CLIENTES NACIONALES',
-        mov_val: 5000000,
-        mov_val_ext: 5000000,
-        mov_obs: 'Venta de mercancía',
-        mov_det: 'Factura de venta productos varios'
+      // Aquí necesitarías un endpoint backend que maneje la conexión a PostgreSQL
+      // Por ahora simularemos el comportamiento, pero deberías crear un backend
+      const response = await fetch('/api/execute-query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          config: this.config
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
       }
-    ];
+
+      const result = await response.json();
+      return result.rows || [];
+      
+    } catch (error) {
+      // Si la API no está disponible, mostramos un mensaje específico
+      console.error('Error conectando con backend:', error);
+      throw new Error('No se pudo conectar con el backend de base de datos. Necesitas configurar un servidor backend para ejecutar queries reales en PostgreSQL.');
+    }
+  }
+
+  // Gestión de módulos guardados
+  getSavedModules(): SavedModule[] {
+    const saved = localStorage.getItem('saved_modules');
+    return saved ? JSON.parse(saved) : [];
+  }
+
+  saveModule(module: Omit<SavedModule, 'id' | 'createdAt' | 'lastUsed'>): string {
+    const modules = this.getSavedModules();
+    const newModule: SavedModule = {
+      ...module,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      lastUsed: new Date().toISOString()
+    };
+    
+    modules.push(newModule);
+    localStorage.setItem('saved_modules', JSON.stringify(modules));
+    return newModule.id;
+  }
+
+  updateModuleLastUsed(moduleId: string) {
+    const modules = this.getSavedModules();
+    const moduleIndex = modules.findIndex(m => m.id === moduleId);
+    if (moduleIndex !== -1) {
+      modules[moduleIndex].lastUsed = new Date().toISOString();
+      localStorage.setItem('saved_modules', JSON.stringify(modules));
+    }
+  }
+
+  deleteModule(moduleId: string) {
+    const modules = this.getSavedModules();
+    const filtered = modules.filter(m => m.id !== moduleId);
+    localStorage.setItem('saved_modules', JSON.stringify(filtered));
+  }
+
+  getModule(moduleId: string): SavedModule | null {
+    const modules = this.getSavedModules();
+    return modules.find(m => m.id === moduleId) || null;
   }
 
   // Simulación de consultas - En producción, estas llamarían a tu API backend
@@ -153,4 +208,4 @@ class DatabaseService {
 }
 
 export const databaseService = new DatabaseService();
-export type { DatabaseConfig, ConMovRecord };
+export type { DatabaseConfig, ConMovRecord, SavedModule };
