@@ -54,6 +54,11 @@ ORDER BY
 
   const [activeTab, setActiveTab] = useState<'query' | 'filters' | 'modules'>('query');
 
+  // Función para actualizar la lista de módulos
+  const updateModules = () => {
+    setSavedModules(moduleService.getAllModules());
+  };
+
   useEffect(() => {
     if (location.state?.loadModule) {
       const module = location.state.loadModule as PersistentModule;
@@ -144,7 +149,7 @@ ORDER BY
         filters
       });
 
-      setSavedModules(moduleService.getAllModules());
+      updateModules();
       setShowSaveDialog(false);
       setModuleForm({ name: '', description: '' });
 
@@ -163,18 +168,18 @@ ORDER BY
 
   const loadModule = (module: PersistentModule) => {
     setQuery(module.query);
-    // Safely merge module filters with default filters
     const moduleFilters = module.filters || {};
-    setFilters({
-      ter_nit: moduleFilters.ter_nit || '',
-      fecha_desde: moduleFilters.fecha_desde || '',
-      fecha_hasta: moduleFilters.fecha_hasta || '',
-      clc_cod: moduleFilters.clc_cod || '',
-      min_valor: moduleFilters.min_valor || '',
-      max_valor: moduleFilters.max_valor || ''
-    });
+    const safeFilters = {
+      ter_nit: (moduleFilters.ter_nit as string) || '',
+      fecha_desde: (moduleFilters.fecha_desde as string) || '',
+      fecha_hasta: (moduleFilters.fecha_hasta as string) || '',
+      clc_cod: (moduleFilters.clc_cod as string) || '',
+      min_valor: (moduleFilters.min_valor as string) || '',
+      max_valor: (moduleFilters.max_valor as string) || ''
+    };
+    setFilters(safeFilters);
     moduleService.updateModuleLastUsed(module.id);
-    setSavedModules(moduleService.getAllModules());
+    updateModules();
 
     toast({
       title: "Módulo cargado",
@@ -184,17 +189,12 @@ ORDER BY
 
   const deleteModule = (moduleId: string) => {
     moduleService.deleteModule(moduleId);
-    setSavedModules(moduleService.getAllModules());
+    updateModules();
 
     toast({
       title: "Módulo eliminado",
       description: "El módulo se eliminó correctamente",
     });
-  };
-
-  const handleModulePromoted = () => {
-    // Actualizar la lista de módulos después de promover uno
-    setSavedModules(moduleService.getAllModules());
   };
 
   const exportResults = () => {
@@ -303,7 +303,7 @@ ORDER BY
             savedModules={savedModules}
             onLoadModule={loadModule}
             onDeleteModule={deleteModule}
-            onModulePromoted={handleModulePromoted}
+            onModulesUpdate={updateModules}
           />
         </TabsContent>
       </Tabs>

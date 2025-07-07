@@ -47,28 +47,23 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
   
-  // Estado local para funciones dinámicas
   const [dynamicFunctions, setDynamicFunctions] = useState(moduleService.getMainFunctions());
 
-  // Actualizar funciones dinámicas periódicamente
   useEffect(() => {
     const updateDynamicFunctions = () => {
       const newFunctions = moduleService.getMainFunctions();
       setDynamicFunctions(newFunctions);
     };
 
-    // Actualizar inmediatamente
     updateDynamicFunctions();
-
-    // Actualizar cada 2 segundos para detectar cambios
     const interval = setInterval(updateDynamicFunctions, 2000);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <Sidebar className={`${isCollapsed ? 'w-16' : 'w-72'} border-r border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl transition-all duration-300 ease-in-out`} collapsible="icon">
-      <SidebarContent className="bg-transparent">
+    <Sidebar className="border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900" collapsible="icon">
+      <SidebarContent>
         <div className="p-6">
           <div className={`${isCollapsed ? 'hidden' : 'block'}`}>
             <h2 className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -90,10 +85,10 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group text-slate-700 dark:text-slate-300 ${
                           isActive
                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:translate-x-1'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1'
                         }`
                       }
                       end
@@ -121,10 +116,10 @@ export function AppSidebar() {
                       <NavLink
                         to={`/dynamic-function/${func.id}`}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                          `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group text-slate-700 dark:text-slate-300 ${
                             isActive
                               ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25'
-                              : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:translate-x-1'
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1'
                           }`
                         }
                       >

@@ -11,15 +11,15 @@ interface ModulesPanelProps {
   savedModules: PersistentModule[];
   onLoadModule: (module: PersistentModule) => void;
   onDeleteModule: (moduleId: string) => void;
-  onModulePromoted?: () => void;
+  onModulesUpdate: () => void;
 }
 
-export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onModulePromoted }: ModulesPanelProps) => {
+export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onModulesUpdate }: ModulesPanelProps) => {
   const { canCreateMainFunctions } = useUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handlePromoteToMainFunction = (module: PersistentModule) => {
+  const handlePromoteToMainFunction = async (module: PersistentModule) => {
     if (!canCreateMainFunctions()) {
       toast({
         title: "Permisos insuficientes",
@@ -31,24 +31,33 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onMod
 
     console.log('Promoviendo módulo a función principal:', module.name);
     
-    const success = moduleService.promoteToMainFunction(module.id);
-    if (success) {
-      toast({
-        title: "Función principal creada",
-        description: `${module.name} ahora es una función principal y aparecerá en el menú lateral`,
-      });
-      
-      // Notificar al componente padre para actualizar la lista
-      if (onModulePromoted) {
-        onModulePromoted();
+    try {
+      const success = moduleService.promoteToMainFunction(module.id);
+      if (success) {
+        // Actualizar la lista inmediatamente
+        onModulesUpdate();
+        
+        toast({
+          title: "Función principal creada",
+          description: `${module.name} ahora es una función principal y aparecerá en el menú lateral`,
+        });
+        
+        // Pequeño delay para asegurar que el módulo se actualice en el sidebar
+        setTimeout(() => {
+          navigate(`/dynamic-function/${module.id}`);
+        }, 500);
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo crear la función principal",
+          variant: "destructive",
+        });
       }
-      
-      // Navegar a la nueva función principal
-      navigate(`/dynamic-function/${module.id}`);
-    } else {
+    } catch (error) {
+      console.error('Error promoting module:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la función principal",
+        description: "Error al promover el módulo a función principal",
         variant: "destructive",
       });
     }

@@ -27,9 +27,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <SidebarProvider>
-            <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            <div className="min-h-screen flex w-full">
               <AppSidebar />
-              <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out">
+              <div className="flex-1 flex flex-col min-w-0">
                 <header className="border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 shadow-sm sticky top-0 z-40">
                   <div className="flex h-16 items-center justify-between px-6">
                     <div className="flex items-center space-x-4">
@@ -44,7 +44,7 @@ const App = () => (
                     <UserMenu />
                   </div>
                 </header>
-                <main className="flex-1 p-6 overflow-auto custom-scrollbar">
+                <main className="flex-1 p-6 overflow-auto bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
                   <div className="max-w-7xl mx-auto w-full">
                     <Routes>
                       <Route path="/" element={<HomePage />} />
