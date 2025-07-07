@@ -33,7 +33,16 @@ const DynamicFunctionPage = () => {
       const foundModule = moduleService.getModuleById(id);
       if (foundModule) {
         setModule(foundModule);
-        setFilters(foundModule.filters || filters);
+        // Safely merge module filters with default filters
+        const moduleFilters = foundModule.filters || {};
+        setFilters({
+          ter_nit: moduleFilters.ter_nit || '',
+          fecha_desde: moduleFilters.fecha_desde || '',
+          fecha_hasta: moduleFilters.fecha_hasta || '',
+          clc_cod: moduleFilters.clc_cod || '',
+          min_valor: moduleFilters.min_valor || '',
+          max_valor: moduleFilters.max_valor || ''
+        });
         executeQuery(foundModule);
         moduleService.updateModuleLastUsed(id);
       } else {

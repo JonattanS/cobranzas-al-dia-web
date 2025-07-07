@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -163,7 +164,16 @@ ORDER BY
 
   const loadModule = (module: PersistentModule) => {
     setQuery(module.query);
-    setFilters(module.filters || {});
+    // Safely merge module filters with default filters
+    const moduleFilters = module.filters || {};
+    setFilters({
+      ter_nit: moduleFilters.ter_nit || '',
+      fecha_desde: moduleFilters.fecha_desde || '',
+      fecha_hasta: moduleFilters.fecha_hasta || '',
+      clc_cod: moduleFilters.clc_cod || '',
+      min_valor: moduleFilters.min_valor || '',
+      max_valor: moduleFilters.max_valor || ''
+    });
     moduleService.updateModuleLastUsed(module.id);
     setSavedModules(moduleService.getAllModules());
 
