@@ -5,16 +5,19 @@ import { FolderOpen, Play, Trash2, Zap, Shield } from 'lucide-react';
 import { moduleService, type PersistentModule } from '@/services/moduleService';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface ModulesPanelProps {
   savedModules: PersistentModule[];
   onLoadModule: (module: PersistentModule) => void;
   onDeleteModule: (moduleId: string) => void;
+  onModulePromoted?: () => void;
 }
 
-export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule }: ModulesPanelProps) => {
+export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onModulePromoted }: ModulesPanelProps) => {
   const { canCreateMainFunctions } = useUser();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handlePromoteToMainFunction = (module: PersistentModule) => {
     if (!canCreateMainFunctions()) {
@@ -26,14 +29,22 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule }: Mod
       return;
     }
 
+    console.log('Promoviendo módulo a función principal:', module.name);
+    
     const success = moduleService.promoteToMainFunction(module.id);
     if (success) {
       toast({
         title: "Función principal creada",
-        description: `${module.name} ahora es una función principal`,
+        description: `${module.name} ahora es una función principal y aparecerá en el menú lateral`,
       });
-      // Recargar la página para mostrar la nueva función en el sidebar
-      window.location.reload();
+      
+      // Notificar al componente padre para actualizar la lista
+      if (onModulePromoted) {
+        onModulePromoted();
+      }
+      
+      // Navegar a la nueva función principal
+      navigate(`/dynamic-function/${module.id}`);
     } else {
       toast({
         title: "Error",

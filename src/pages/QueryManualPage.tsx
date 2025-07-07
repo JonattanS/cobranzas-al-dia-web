@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -193,6 +192,11 @@ ORDER BY
     });
   };
 
+  const handleModulePromoted = () => {
+    // Actualizar la lista de módulos después de promover uno
+    setSavedModules(moduleService.getAllModules());
+  };
+
   const exportResults = () => {
     if (filteredResults.length === 0) return;
 
@@ -299,6 +303,7 @@ ORDER BY
             savedModules={savedModules}
             onLoadModule={loadModule}
             onDeleteModule={deleteModule}
+            onModulePromoted={handleModulePromoted}
           />
         </TabsContent>
       </Tabs>

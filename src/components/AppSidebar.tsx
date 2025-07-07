@@ -1,6 +1,7 @@
 
 import { BarChart3, Users, FileText, Home, CreditCard, Database, Zap } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -46,11 +47,27 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
   
-  // Obtener funciones principales dinámicas
-  const dynamicFunctions = moduleService.getMainFunctions();
+  // Estado local para funciones dinámicas
+  const [dynamicFunctions, setDynamicFunctions] = useState(moduleService.getMainFunctions());
+
+  // Actualizar funciones dinámicas periódicamente
+  useEffect(() => {
+    const updateDynamicFunctions = () => {
+      const newFunctions = moduleService.getMainFunctions();
+      setDynamicFunctions(newFunctions);
+    };
+
+    // Actualizar inmediatamente
+    updateDynamicFunctions();
+
+    // Actualizar cada 2 segundos para detectar cambios
+    const interval = setInterval(updateDynamicFunctions, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <Sidebar className={`${isCollapsed ? 'w-16' : 'w-72'} border-r border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl`} collapsible="icon">
+    <Sidebar className={`${isCollapsed ? 'w-16' : 'w-72'} border-r border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl transition-all duration-300 ease-in-out`} collapsible="icon">
       <SidebarContent className="bg-transparent">
         <div className="p-6">
           <div className={`${isCollapsed ? 'hidden' : 'block'}`}>
