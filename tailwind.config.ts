@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Colores específicos del sistema financiero
+				finance: {
+					income: '142 76% 36%',
+					expense: '0 84% 60%',
+					neutral: '215 16% 47%',
+					accent: '217 91% 60%'
 				}
 			},
 			borderRadius: {
