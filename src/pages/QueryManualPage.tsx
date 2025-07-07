@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { databaseService, type SavedModule } from '@/services/database';
+import { databaseService } from '@/services/database';
+import { moduleService, type PersistentModule } from '@/services/moduleService';
 import { useToast } from '@/hooks/use-toast';
 
 import { QueryEditor } from '@/components/query-manual/QueryEditor';
@@ -38,7 +39,7 @@ ORDER BY
   const [filteredResults, setFilteredResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [savedModules, setSavedModules] = useState<SavedModule[]>(databaseService.getSavedModules());
+  const [savedModules, setSavedModules] = useState<PersistentModule[]>(moduleService.getAllModules());
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [moduleForm, setModuleForm] = useState({ name: '', description: '' });
 
@@ -55,13 +56,12 @@ ORDER BY
 
   useEffect(() => {
     if (location.state?.loadModule) {
-      const module = location.state.loadModule as SavedModule;
+      const module = location.state.loadModule as PersistentModule;
       loadModule(module);
       navigate('/query-manual', { replace: true });
     }
   }, [location.state, navigate]);
 
-  // Ejecutar query y mostrar resultados en la pestaña de filtros
   const executeQuery = async () => {
     if (!databaseService.isConfigured()) {
       setError('Base de datos no configurada');
@@ -74,8 +74,8 @@ ORDER BY
     try {
       const result = await databaseService.executeCustomQuery(query);
       setResults(result);
-      setFilteredResults(result); // Inicialmente sin filtro
-      setActiveTab('filters');    // Cambiar a pestaña filtros para mostrar resultados
+      setFilteredResults(result);
+      setActiveTab('filters');
 
       toast({
         title: "Query ejecutado",
@@ -96,7 +96,6 @@ ORDER BY
     }
   };
 
-  // Filtrar resultados en frontend según filtros
   const applyFilters = () => {
     let filtered = results;
 
@@ -138,14 +137,14 @@ ORDER BY
     }
 
     try {
-      databaseService.saveModule({
+      moduleService.saveModule({
         name: moduleForm.name,
         description: moduleForm.description,
         query,
         filters
       });
 
-      setSavedModules(databaseService.getSavedModules());
+      setSavedModules(moduleService.getAllModules());
       setShowSaveDialog(false);
       setModuleForm({ name: '', description: '' });
 
@@ -162,11 +161,11 @@ ORDER BY
     }
   };
 
-  const loadModule = (module: SavedModule) => {
+  const loadModule = (module: PersistentModule) => {
     setQuery(module.query);
     setFilters(module.filters || {});
-    databaseService.updateModuleLastUsed(module.id);
-    setSavedModules(databaseService.getSavedModules());
+    moduleService.updateModuleLastUsed(module.id);
+    setSavedModules(moduleService.getAllModules());
 
     toast({
       title: "Módulo cargado",
@@ -175,8 +174,8 @@ ORDER BY
   };
 
   const deleteModule = (moduleId: string) => {
-    databaseService.deleteModule(moduleId);
-    setSavedModules(databaseService.getSavedModules());
+    moduleService.deleteModule(moduleId);
+    setSavedModules(moduleService.getAllModules());
 
     toast({
       title: "Módulo eliminado",
@@ -184,7 +183,6 @@ ORDER BY
     });
   };
 
-  // Exportar CSV
   const exportResults = () => {
     if (filteredResults.length === 0) return;
 
@@ -206,7 +204,6 @@ ORDER BY
     });
   };
 
-  // Exportar PDF
   const exportPDF = () => {
     if (filteredResults.length === 0) return;
 
@@ -239,7 +236,7 @@ ORDER BY
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Query Manual</h1>
-          <p className="text-muted-foreground">
+          <p className="text-slate-600 dark:text-slate-400">
             Ejecuta consultas SQL personalizadas y crea módulos reutilizables
           </p>
         </div>
@@ -265,7 +262,6 @@ ORDER BY
             isLoading={isLoading}
             error={error}
             onSaveModule={() => setShowSaveDialog(true)}
-            
             hasResults={results.length > 0}
             resultsCount={results.length}
           />
