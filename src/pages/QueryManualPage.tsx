@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -39,7 +40,7 @@ ORDER BY
   const [filteredResults, setFilteredResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [savedModules, setSavedModules] = useState<PersistentModule[]>(moduleService.getAllModules());
+  const [savedModules, setSavedModules] = useState<PersistentModule[]>([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [moduleForm, setModuleForm] = useState({ name: '', description: '' });
 
@@ -54,10 +55,13 @@ ORDER BY
 
   const [activeTab, setActiveTab] = useState<'query' | 'filters' | 'modules'>('query');
 
-  // Función para actualizar la lista de módulos
   const updateModules = () => {
-    setSavedModules(moduleService.getAllModules());
+    setSavedModules(moduleService.getAllModules().filter(m => !m.isMainFunction));
   };
+
+  useEffect(() => {
+    updateModules();
+  }, []);
 
   useEffect(() => {
     if (location.state?.loadModule) {
@@ -146,7 +150,8 @@ ORDER BY
         name: moduleForm.name,
         description: moduleForm.description,
         query,
-        filters
+        filters,
+        folderId: 'default-folder'
       });
 
       updateModules();
@@ -188,6 +193,16 @@ ORDER BY
   };
 
   const deleteModule = (moduleId: string) => {
+    const module = savedModules.find(m => m.id === moduleId);
+    if (module?.isMainFunction) {
+      toast({
+        title: "Error",
+        description: "No se puede eliminar una función principal desde aquí",
+        variant: "destructive",
+      });
+      return;
+    }
+
     moduleService.deleteModule(moduleId);
     updateModules();
 

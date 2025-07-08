@@ -15,7 +15,7 @@ interface ModulesPanelProps {
 }
 
 export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onModulesUpdate }: ModulesPanelProps) => {
-  const { canCreateMainFunctions } = useUser();
+  const { canCreateMainFunctions, canDeleteMainFunctions } = useUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -32,7 +32,7 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onMod
     console.log('Promoviendo módulo a función principal:', module.name);
     
     try {
-      const success = moduleService.promoteToMainFunction(module.id);
+      const success = moduleService.promoteToMainFunction(module.id, 'default-folder');
       if (success) {
         // Actualizar la lista inmediatamente
         onModulesUpdate();
@@ -42,7 +42,7 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onMod
           description: `${module.name} ahora es una función principal y aparecerá en el menú lateral`,
         });
         
-        // Pequeño delay para asegurar que el módulo se actualice en el sidebar
+        // Pequeño delay para asegurar que el módulo se actualice
         setTimeout(() => {
           navigate(`/dynamic-function/${module.id}`);
         }, 500);
@@ -61,6 +61,20 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onMod
         variant: "destructive",
       });
     }
+  };
+
+  const handleDeleteModule = (moduleId: string) => {
+    const module = savedModules.find(m => m.id === moduleId);
+    if (module?.isMainFunction && !canDeleteMainFunctions()) {
+      toast({
+        title: "Permisos insuficientes",
+        description: "Solo los administradores pueden eliminar funciones principales",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    onDeleteModule(moduleId);
   };
 
   return (
@@ -124,7 +138,8 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onMod
                     <Button 
                       size="sm" 
                       variant="destructive" 
-                      onClick={() => onDeleteModule(module.id)}
+                      onClick={() => handleDeleteModule(module.id)}
+                      disabled={module.isMainFunction && !canDeleteMainFunctions()}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

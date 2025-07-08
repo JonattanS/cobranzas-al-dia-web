@@ -8,11 +8,20 @@ export interface PersistentModule {
   filters: Record<string, any>;
   createdAt: string;
   lastUsed: string;
+  usageCount: number;
   isMainFunction?: boolean;
+  folderId?: string;
   dashboardConfig?: {
     charts: any[];
     kpis: any[];
   };
+}
+
+export interface ModuleFolder {
+  id: string;
+  name: string;
+  createdAt: string;
+  parentId?: string;
 }
 
 // Módulos hardcodeados en el sistema - estos persisten entre reinicios
@@ -33,7 +42,9 @@ const PERSISTENT_MODULES: PersistentModule[] = [
     ORDER BY doc_fec DESC`,
     filters: {},
     createdAt: '2025-01-07T00:00:00.000Z',
-    lastUsed: '2025-01-07T00:00:00.000Z'
+    lastUsed: '2025-01-07T00:00:00.000Z',
+    usageCount: 5,
+    isMainFunction: true
   },
   {
     id: 'resumen-terceros',
@@ -51,12 +62,23 @@ const PERSISTENT_MODULES: PersistentModule[] = [
     ORDER BY saldo_total DESC`,
     filters: {},
     createdAt: '2025-01-07T00:00:00.000Z',
-    lastUsed: '2025-01-07T00:00:00.000Z'
+    lastUsed: '2025-01-07T00:00:00.000Z',
+    usageCount: 3,
+    isMainFunction: true
+  }
+];
+
+const DEFAULT_FOLDERS: ModuleFolder[] = [
+  {
+    id: 'default-folder',
+    name: 'General',
+    createdAt: '2025-01-07T00:00:00.000Z'
   }
 ];
 
 class ModuleService {
   private modules: PersistentModule[] = [...PERSISTENT_MODULES];
+  private folders: ModuleFolder[] = [...DEFAULT_FOLDERS];
 
   getAllModules(): PersistentModule[] {
     return this.modules;
@@ -66,12 +88,14 @@ class ModuleService {
     return this.modules.find(m => m.id === id);
   }
 
-  saveModule(module: Omit<PersistentModule, 'id' | 'createdAt' | 'lastUsed'>): PersistentModule {
+  saveModule(module: Omit<PersistentModule, 'id' | 'createdAt' | 'lastUsed' | 'usageCount'>): PersistentModule {
     const newModule: PersistentModule = {
       ...module,
       id: `module-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      lastUsed: new Date().toISOString()
+      lastUsed: new Date().toISOString(),
+      usageCount: 0,
+      folderId: module.folderId || 'default-folder'
     };
     
     this.modules.push(newModule);
@@ -82,13 +106,17 @@ class ModuleService {
     const module = this.modules.find(m => m.id === id);
     if (module) {
       module.lastUsed = new Date().toISOString();
+      module.usageCount = (module.usageCount || 0) + 1;
     }
   }
 
-  promoteToMainFunction(id: string): boolean {
+  promoteToMainFunction(id: string, folderId?: string): boolean {
     const module = this.modules.find(m => m.id === id);
     if (module) {
       module.isMainFunction = true;
+      if (folderId) {
+        module.folderId = folderId;
+      }
       return true;
     }
     return false;
@@ -96,6 +124,13 @@ class ModuleService {
 
   getMainFunctions(): PersistentModule[] {
     return this.modules.filter(m => m.isMainFunction);
+  }
+
+  getMostUsedMainFunctions(limit: number = 6): PersistentModule[] {
+    return this.modules
+      .filter(m => m.isMainFunction)
+      .sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))
+      .slice(0, limit);
   }
 
   deleteModule(id: string): boolean {
@@ -111,6 +146,52 @@ class ModuleService {
     const module = this.modules.find(m => m.id === id);
     if (module) {
       module.dashboardConfig = dashboardConfig;
+      return true;
+    }
+    return false;
+  }
+
+  // Folder management
+  getAllFolders(): ModuleFolder[] {
+    return this.folders;
+  }
+
+  createFolder(name: string, parentId?: string): ModuleFolder {
+    const newFolder: ModuleFolder = {
+      id: `folder-${Date.now()}`,
+      name,
+      createdAt: new Date().toISOString(),
+      parentId
+    };
+    
+    this.folders.push(newFolder);
+    return newFolder;
+  }
+
+  deleteFolder(id: string): boolean {
+    const index = this.folders.findIndex(f => f.id === id);
+    if (index !== -1) {
+      // Move modules from deleted folder to default folder
+      this.modules.forEach(module => {
+        if (module.folderId === id) {
+          module.folderId = 'default-folder';
+        }
+      });
+      
+      this.folders.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  getModulesByFolder(folderId: string): PersistentModule[] {
+    return this.modules.filter(m => m.folderId === folderId);
+  }
+
+  moveModule(moduleId: string, folderId: string): boolean {
+    const module = this.modules.find(m => m.id === moduleId);
+    if (module) {
+      module.folderId = folderId;
       return true;
     }
     return false;
