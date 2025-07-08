@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -6,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { databaseService } from '@/services/database';
 import { moduleService, type PersistentModule } from '@/services/moduleService';
+import { schemaService, type QueryConfiguration } from '@/services/schemaService';
 import { useToast } from '@/hooks/use-toast';
 
 import { QueryEditor } from '@/components/query-manual/QueryEditor';
@@ -13,6 +13,7 @@ import { FilterPanel } from '@/components/query-manual/FilterPanel';
 import { ModulesPanel } from '@/components/query-manual/ModulesPanel';
 import { ResultsTable } from '@/components/query-manual/ResultsTable';
 import { SaveModuleDialog } from '@/components/query-manual/SaveModuleDialog';
+import { QueryBuilder } from '@/components/query-builder/QueryBuilder';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -22,19 +23,13 @@ const QueryManualPage = () => {
   const { toast } = useToast();
   const location = useLocation();
 
-  const [query, setQuery] = useState(`SELECT
-  ter_nit,
-  ter_raz,
-  SUM(mov_val) AS saldo_por_cobrar
-FROM
-  public.con_mov
-WHERE
-  anf_cla = 1
-  AND anf_cre = 1
-GROUP BY
-  ter_nit, ter_raz
-ORDER BY
-  ter_raz;`);
+  const [query, setQuery] = useState('');
+  const [queryConfig, setQueryConfig] = useState<QueryConfiguration>({
+    selectedFields: [],
+    conditions: [],
+    orderBy: [],
+    groupBy: []
+  });
 
   const [results, setResults] = useState<any[]>([]);
   const [filteredResults, setFilteredResults] = useState<any[]>([]);
@@ -53,7 +48,7 @@ ORDER BY
     max_valor: ''
   });
 
-  const [activeTab, setActiveTab] = useState<'query' | 'filters' | 'modules'>('query');
+  const [activeTab, setActiveTab] = useState<'visual' | 'sql' | 'filters' | 'modules'>('visual');
 
   const updateModules = () => {
     setSavedModules(moduleService.getAllModules().filter(m => !m.isMainFunction));
@@ -71,9 +66,19 @@ ORDER BY
     }
   }, [location.state, navigate]);
 
+  const handleQueryGenerated = (sql: string, config: QueryConfiguration) => {
+    setQuery(sql);
+    setQueryConfig(config);
+  };
+
   const executeQuery = async () => {
     if (!databaseService.isConfigured()) {
       setError('Base de datos no configurada');
+      return;
+    }
+
+    if (!query.trim()) {
+      setError('No hay consulta para ejecutar');
       return;
     }
 
@@ -150,7 +155,7 @@ ORDER BY
         name: moduleForm.name,
         description: moduleForm.description,
         query,
-        filters,
+        filters: queryConfig,
         folderId: 'default-folder'
       });
 
@@ -173,16 +178,24 @@ ORDER BY
 
   const loadModule = (module: PersistentModule) => {
     setQuery(module.query);
-    const moduleFilters = module.filters || {};
-    const safeFilters = {
-      ter_nit: (moduleFilters.ter_nit as string) || '',
-      fecha_desde: (moduleFilters.fecha_desde as string) || '',
-      fecha_hasta: (moduleFilters.fecha_hasta as string) || '',
-      clc_cod: (moduleFilters.clc_cod as string) || '',
-      min_valor: (moduleFilters.min_valor as string) || '',
-      max_valor: (moduleFilters.max_valor as string) || ''
-    };
-    setFilters(safeFilters);
+    
+    // Si el módulo tiene configuración de query builder, cargarla
+    if (module.filters && typeof module.filters === 'object' && 'selectedFields' in module.filters) {
+      setQueryConfig(module.filters as QueryConfiguration);
+    } else {
+      // Configuración legacy de filtros
+      const moduleFilters = module.filters || {};
+      const safeFilters = {
+        ter_nit: (moduleFilters.ter_nit as string) || '',
+        fecha_desde: (moduleFilters.fecha_desde as string) || '',
+        fecha_hasta: (moduleFilters.fecha_hasta as string) || '',
+        clc_cod: (moduleFilters.clc_cod as string) || '',
+        min_valor: (moduleFilters.min_valor as string) || '',
+        max_valor: (moduleFilters.max_valor as string) || ''
+      };
+      setFilters(safeFilters);
+    }
+    
     moduleService.updateModuleLastUsed(module.id);
     updateModules();
 
@@ -266,24 +279,40 @@ ORDER BY
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Query Manual</h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Ejecuta consultas SQL personalizadas y crea módulos reutilizables
+            Construye consultas visualmente o ejecuta SQL personalizado
           </p>
         </div>
       </div>
 
       <Tabs
         value={activeTab}
-        onValueChange={(value: string) => setActiveTab(value as 'query' | 'filters' | 'modules')}
+        onValueChange={(value: string) => setActiveTab(value as 'visual' | 'sql' | 'filters' | 'modules')}
         className="space-y-4"
       >
 
         <TabsList>
-          <TabsTrigger value="query">Editor SQL</TabsTrigger>
-          <TabsTrigger value="filters">Filtros Dinámicos</TabsTrigger>
+          <TabsTrigger value="visual">Constructor Visual</TabsTrigger>
+          <TabsTrigger value="sql">Editor SQL</TabsTrigger>
+          <TabsTrigger value="filters">Filtros y Resultados</TabsTrigger>
           <TabsTrigger value="modules">Módulos Guardados ({savedModules.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="query" className="space-y-4">
+        <TabsContent value="visual" className="space-y-4">
+          <QueryBuilder
+            onQueryGenerated={handleQueryGenerated}
+            initialConfig={queryConfig}
+          />
+          <div className="flex gap-2">
+            <Button onClick={executeQuery} disabled={isLoading || !query.trim()}>
+              {isLoading ? 'Ejecutando...' : 'Ejecutar Consulta'}
+            </Button>
+            <Button variant="outline" disabled={!query.trim()} onClick={() => setShowSaveDialog(true)}>
+              Guardar como Módulo
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="sql" className="space-y-4">
           <QueryEditor
             query={query}
             setQuery={setQuery}
