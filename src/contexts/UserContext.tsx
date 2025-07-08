@@ -6,6 +6,7 @@ export type UserRole = 'usuario' | 'admin';
 interface UserContextType {
   role: UserRole;
   setRole: (role: UserRole) => void;
+  isAdmin: () => boolean;
   canCreateMainFunctions: () => boolean;
   canDeleteMainFunctions: () => boolean;
 }
@@ -27,6 +28,7 @@ interface UserProviderProps {
 export const UserProvider = ({ children }: UserProviderProps) => {
   const [role, setRole] = useState<UserRole>('admin'); // Por defecto admin para testing
 
+  const isAdmin = () => role === 'admin';
   const canCreateMainFunctions = () => role === 'admin';
   const canDeleteMainFunctions = () => role === 'admin';
 
@@ -34,6 +36,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     <UserContext.Provider value={{
       role,
       setRole,
+      isAdmin,
       canCreateMainFunctions,
       canDeleteMainFunctions
     }}>
