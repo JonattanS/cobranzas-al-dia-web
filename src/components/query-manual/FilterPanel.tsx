@@ -38,7 +38,7 @@ export const FilterPanel = ({ filters, setFilters, onApplyFilters }: FilterPanel
               id="ter_nit"
               value={filters.ter_nit}
               onChange={(e) => setFilters({...filters, ter_nit: e.target.value})}
-              placeholder="900123456"
+              placeholder="aqui ingrese el nit a filtrar"
             />
           </div>
           
@@ -48,7 +48,7 @@ export const FilterPanel = ({ filters, setFilters, onApplyFilters }: FilterPanel
               id="clc_cod"
               value={filters.clc_cod}
               onChange={(e) => setFilters({...filters, clc_cod: e.target.value})}
-              placeholder="FAC, REC, etc."
+              placeholder=""
             />
           </div>
           
@@ -79,7 +79,7 @@ export const FilterPanel = ({ filters, setFilters, onApplyFilters }: FilterPanel
               type="number"
               value={filters.min_valor}
               onChange={(e) => setFilters({...filters, min_valor: e.target.value})}
-              placeholder="0"
+              
             />
           </div>
           
@@ -90,7 +90,7 @@ export const FilterPanel = ({ filters, setFilters, onApplyFilters }: FilterPanel
               type="number"
               value={filters.max_valor}
               onChange={(e) => setFilters({...filters, max_valor: e.target.value})}
-              placeholder="1000000"
+              
             />
           </div>
         </div>

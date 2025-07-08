@@ -17,7 +17,7 @@ import { moduleService } from '@/services/moduleService';
 
 const staticNavigation = [
   {
-    title: 'Dashboard',
+    title: 'Inicio',
     url: '/',
     icon: Home,
   },
@@ -62,19 +62,19 @@ export function AppSidebar() {
   }, []);
 
   return (
-    <Sidebar className="border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900" collapsible="icon">
+    <Sidebar className="border-r border-slate-200 dark:border-slate-700 bg-[#002550] dark:bg-[#002550]" collapsible="icon">
       <SidebarContent>
         <div className="p-6">
           <div className={`${isCollapsed ? 'hidden' : 'block'}`}>
-            <h2 className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="font-bold text-xl bg-[#F7722F] bg-clip-text text-transparent">
               Nova
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Sistema Financiero</p>
+            <p className="text-sm text-[#F7722F] dark:text-slate-400 mt-1">Sistema Financiero</p>
           </div>
         </div>
         
         <SidebarGroup>
-          <SidebarGroupLabel className={`${isCollapsed ? 'hidden' : 'block'} text-blue-600 dark:text-blue-400 font-semibold`}>
+          <SidebarGroupLabel className={`${isCollapsed ? 'hidden' : 'block'} text-[#F7722F] dark:text-[#F7722F] font-semibold`}>
             Módulos
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -105,7 +105,7 @@ export function AppSidebar() {
 
         {dynamicFunctions.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel className={`${isCollapsed ? 'hidden' : 'block'} text-purple-600 dark:text-purple-400 font-semibold`}>
+            <SidebarGroupLabel className={`${isCollapsed ? 'hidden' : 'block'} text-[#F7722F] dark:text-[#F7722F] font-semibold`}>
               Funciones Personalizadas
             </SidebarGroupLabel>
             <SidebarGroupContent>
