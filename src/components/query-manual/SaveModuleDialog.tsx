@@ -91,6 +91,11 @@ export const SaveModuleDialog = ({
                       <p className="text-sm text-slate-600 dark:text-slate-400">
                         Crea gráficos, KPIs y tablas personalizadas
                       </p>
+                      {availableFields.length === 0 && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          Ejecuta primero una consulta para habilitar la configuración del dashboard
+                        </p>
+                      )}
                     </div>
                     <Button
                       variant="outline"
@@ -125,9 +130,9 @@ export const SaveModuleDialog = ({
                     </div>
                   )}
                   
-                  {!hasCharts && !hasKPIs && (
+                  {!hasCharts && !hasKPIs && availableFields.length > 0 && (
                     <p className="text-sm text-slate-500 dark:text-slate-500">
-                      Dashboard predeterminado (se puede configurar después)
+                      Dashboard predeterminado (se puede configurar ahora)
                     </p>
                   )}
                 </div>

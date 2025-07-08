@@ -50,6 +50,9 @@ const QueryManualPage = () => {
 
   const [activeTab, setActiveTab] = useState<'visual' | 'sql' | 'filters' | 'modules'>('visual');
 
+  // Obtener campos disponibles de la tabla
+  const availableFields = schemaService.getTableColumns().map(col => col.name);
+
   const updateModules = () => {
     setSavedModules(moduleService.getAllModules().filter(m => !m.isMainFunction));
   };
@@ -140,7 +143,7 @@ const QueryManualPage = () => {
     });
   };
 
-  const saveAsModule = () => {
+  const saveAsModule = (dashboardConfig?: any) => {
     if (!moduleForm.name.trim()) {
       toast({
         title: "Error",
@@ -156,7 +159,8 @@ const QueryManualPage = () => {
         description: moduleForm.description,
         query,
         filters: queryConfig,
-        folderId: 'default-folder'
+        folderId: 'default-folder',
+        dashboardConfig: dashboardConfig || { charts: [], kpis: [] }
       });
 
       updateModules();
@@ -289,7 +293,6 @@ const QueryManualPage = () => {
         onValueChange={(value: string) => setActiveTab(value as 'visual' | 'sql' | 'filters' | 'modules')}
         className="space-y-4"
       >
-
         <TabsList>
           <TabsTrigger value="visual">Constructor Visual</TabsTrigger>
           <TabsTrigger value="sql">Editor SQL</TabsTrigger>
@@ -358,6 +361,7 @@ const QueryManualPage = () => {
         moduleForm={moduleForm}
         setModuleForm={setModuleForm}
         onSave={saveAsModule}
+        availableFields={availableFields}
       />
     </div>
   );
