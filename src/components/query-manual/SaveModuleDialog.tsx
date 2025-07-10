@@ -6,14 +6,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { DashboardConfigDialog } from '@/components/dashboard-config/DashboardConfigDialog';
-import { Settings, Eye } from 'lucide-react';
+import { FilterConfigDialog } from './FilterConfigDialog';
+import { Settings, Eye, Filter } from 'lucide-react';
+
+interface FilterConfig {
+  columnName: string;
+  enabled: boolean;
+}
 
 interface SaveModuleDialogProps {
   isOpen: boolean;
   onClose: () => void;
   moduleForm: { name: string; description: string };
   setModuleForm: (form: { name: string; description: string }) => void;
-  onSave: (dashboardConfig?: any) => void;
+  onSave: (dashboardConfig?: any, filterConfig?: FilterConfig[]) => void;
   availableFields?: string[];
 }
 
@@ -26,11 +32,13 @@ export const SaveModuleDialog = ({
   availableFields = [] 
 }: SaveModuleDialogProps) => {
   const [showDashboardConfig, setShowDashboardConfig] = useState(false);
+  const [showFilterConfig, setShowFilterConfig] = useState(false);
   const [dashboardConfig, setDashboardConfig] = useState({ charts: [], kpis: [] });
+  const [filterConfig, setFilterConfig] = useState<FilterConfig[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
   const handleSave = () => {
-    onSave(dashboardConfig);
+    onSave(dashboardConfig, filterConfig);
   };
 
   const handleDashboardConfigSave = (config: any) => {
@@ -38,8 +46,14 @@ export const SaveModuleDialog = ({
     setShowDashboardConfig(false);
   };
 
+  const handleFilterConfigSave = (config: FilterConfig[]) => {
+    setFilterConfig(config);
+    setShowFilterConfig(false);
+  };
+
   const hasCharts = dashboardConfig.charts.length > 0;
   const hasKPIs = dashboardConfig.kpis.length > 0;
+  const enabledFiltersCount = filterConfig.filter(f => f.enabled).length;
 
   return (
     <>
@@ -48,7 +62,7 @@ export const SaveModuleDialog = ({
           <DialogHeader>
             <DialogTitle>Guardar Módulo y Configurar Dashboard</DialogTitle>
             <DialogDescription>
-              Configura los detalles de tu módulo y personaliza su dashboard ejecutivo
+              Configura los detalles de tu módulo, personaliza su dashboard ejecutivo y define los filtros dinámicos
             </DialogDescription>
           </DialogHeader>
           
@@ -73,6 +87,37 @@ export const SaveModuleDialog = ({
                   onChange={(e) => setModuleForm({ ...moduleForm, description: e.target.value })}
                   placeholder="Describe qué hace este módulo..."
                 />
+              </div>
+            </div>
+            
+            {/* Configuración de Filtros Dinámicos */}
+            <div className="border-t pt-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Filtros Dinámicos</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Selecciona qué columnas estarán disponibles como filtros en este módulo
+                </p>
+                
+                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Configuración de Filtros</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Define qué campos podrán usarse para filtrar los resultados
+                    </p>
+                    {enabledFiltersCount > 0 && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        ✓ {enabledFiltersCount} filtros configurados
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowFilterConfig(true)}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    {enabledFiltersCount > 0 ? `Editar Filtros (${enabledFiltersCount})` : 'Configurar Filtros'}
+                  </Button>
+                </div>
               </div>
             </div>
             
@@ -150,6 +195,13 @@ export const SaveModuleDialog = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      <FilterConfigDialog
+        isOpen={showFilterConfig}
+        onClose={() => setShowFilterConfig(false)}
+        selectedFilters={filterConfig}
+        onFiltersChange={handleFilterConfigSave}
+      />
 
       <DashboardConfigDialog
         isOpen={showDashboardConfig}

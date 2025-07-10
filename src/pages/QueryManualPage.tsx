@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -9,7 +10,7 @@ import { schemaService, type QueryConfiguration } from '@/services/schemaService
 import { useToast } from '@/hooks/use-toast';
 
 import { QueryEditor } from '@/components/query-manual/QueryEditor';
-import { FilterPanel } from '@/components/query-manual/FilterPanel';
+import { DynamicFilterPanel } from '@/components/query-manual/DynamicFilterPanel';
 import { ModulesPanel } from '@/components/query-manual/ModulesPanel';
 import { ResultsTable } from '@/components/query-manual/ResultsTable';
 import { SaveModuleDialog } from '@/components/query-manual/SaveModuleDialog';
@@ -17,6 +18,18 @@ import { QueryBuilder } from '@/components/query-builder/QueryBuilder';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+interface FilterConfig {
+  columnName: string;
+  enabled: boolean;
+}
+
+interface FilterValue {
+  columnName: string;
+  value: any;
+  operator?: string;
+  secondValue?: any;
+}
 
 const QueryManualPage = () => {
   const navigate = useNavigate();
@@ -39,14 +52,9 @@ const QueryManualPage = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [moduleForm, setModuleForm] = useState({ name: '', description: '' });
 
-  const [filters, setFilters] = useState({
-    ter_nit: '',
-    fecha_desde: '',
-    fecha_hasta: '',
-    clc_cod: '',
-    min_valor: '',
-    max_valor: ''
-  });
+  // Nuevos estados para filtros dinámicos
+  const [filterConfig, setFilterConfig] = useState<FilterConfig[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState<FilterValue[]>([]);
 
   const [activeTab, setActiveTab] = useState<'visual' | 'sql' | 'filters' | 'modules'>('visual');
 
@@ -113,37 +121,99 @@ const QueryManualPage = () => {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = results;
+  const applyDynamicFilters = (filters: FilterValue[]) => {
+    let filtered = [...results];
 
-    if (filters.ter_nit) {
-      filtered = filtered.filter(r => r.ter_nit?.toString().includes(filters.ter_nit));
-    }
-    if (filters.fecha_desde) {
-      filtered = filtered.filter(r => r.doc_fec >= filters.fecha_desde);
-    }
-    if (filters.fecha_hasta) {
-      filtered = filtered.filter(r => r.doc_fec <= filters.fecha_hasta);
-    }
-    if (filters.clc_cod) {
-      filtered = filtered.filter(r => r.clc_cod === filters.clc_cod);
-    }
-    if (filters.min_valor) {
-      filtered = filtered.filter(r => Math.abs(r.mov_val) >= Number(filters.min_valor));
-    }
-    if (filters.max_valor) {
-      filtered = filtered.filter(r => Math.abs(r.mov_val) <= Number(filters.max_valor));
-    }
+    filters.forEach(filter => {
+      if (!filter.value && filter.value !== false) return;
+
+      const column = schemaService.getTableColumns().find(col => col.name === filter.columnName);
+      if (!column) return;
+
+      filtered = filtered.filter(row => {
+        const cellValue = row[filter.columnName];
+        
+        if (column.type === 'boolean') {
+          return cellValue === filter.value;
+        }
+
+        if (column.isDate) {
+          const rowDate = new Date(cellValue);
+          const filterDate = new Date(filter.value);
+          
+          switch (filter.operator) {
+            case '=':
+              return rowDate.toDateString() === filterDate.toDateString();
+            case '>=':
+              return rowDate >= filterDate;
+            case '<=':
+              return rowDate <= filterDate;
+            case 'BETWEEN':
+              if (filter.secondValue) {
+                const endDate = new Date(filter.secondValue);
+                return rowDate >= filterDate && rowDate <= endDate;
+              }
+              return true;
+            default:
+              return true;
+          }
+        }
+
+        if (column.isNumeric) {
+          const numValue = Number(cellValue);
+          const filterNum = Number(filter.value);
+          
+          switch (filter.operator) {
+            case '=':
+              return numValue === filterNum;
+            case '>':
+              return numValue > filterNum;
+            case '>=':
+              return numValue >= filterNum;
+            case '<':
+              return numValue < filterNum;
+            case '<=':
+              return numValue <= filterNum;
+            case 'BETWEEN':
+              if (filter.secondValue) {
+                const endNum = Number(filter.secondValue);
+                return numValue >= filterNum && numValue <= endNum;
+              }
+              return true;
+            default:
+              return true;
+          }
+        }
+
+        // Campo de texto
+        const strValue = String(cellValue).toLowerCase();
+        const filterStr = String(filter.value).toLowerCase();
+        
+        switch (filter.operator) {
+          case '=':
+            return strValue === filterStr;
+          case 'LIKE':
+            return strValue.includes(filterStr);
+          case 'STARTS_WITH':
+            return strValue.startsWith(filterStr);
+          case 'ENDS_WITH':
+            return strValue.endsWith(filterStr);
+          default:
+            return strValue.includes(filterStr);
+        }
+      });
+    });
 
     setFilteredResults(filtered);
+    setAppliedFilters(filters);
 
     toast({
       title: "Filtros aplicados",
-      description: `Se filtraron ${filtered.length} registros`,
+      description: `Se filtraron ${filtered.length} de ${results.length} registros`,
     });
   };
 
-  const saveAsModule = (dashboardConfig?: any) => {
+  const saveAsModule = (dashboardConfig?: any, dynamicFilterConfig?: FilterConfig[]) => {
     if (!moduleForm.name.trim()) {
       toast({
         title: "Error",
@@ -160,12 +230,14 @@ const QueryManualPage = () => {
         query,
         filters: queryConfig,
         folderId: 'default-folder',
-        dashboardConfig: dashboardConfig || { charts: [], kpis: [] }
+        dashboardConfig: dashboardConfig || { charts: [], kpis: [] },
+        dynamicFilters: dynamicFilterConfig || []
       });
 
       updateModules();
       setShowSaveDialog(false);
       setModuleForm({ name: '', description: '' });
+      setFilterConfig([]);
 
       toast({
         title: "Módulo guardado",
@@ -183,22 +255,18 @@ const QueryManualPage = () => {
   const loadModule = (module: PersistentModule) => {
     setQuery(module.query);
     
-    // Si el módulo tiene configuración de query builder, cargarla
     if (module.filters && typeof module.filters === 'object' && 'selectedFields' in module.filters) {
       setQueryConfig(module.filters as QueryConfiguration);
-    } else {
-      // Configuración legacy de filtros
-      const moduleFilters = module.filters || {};
-      const safeFilters = {
-        ter_nit: (moduleFilters.ter_nit as string) || '',
-        fecha_desde: (moduleFilters.fecha_desde as string) || '',
-        fecha_hasta: (moduleFilters.fecha_hasta as string) || '',
-        clc_cod: (moduleFilters.clc_cod as string) || '',
-        min_valor: (moduleFilters.min_valor as string) || '',
-        max_valor: (moduleFilters.max_valor as string) || ''
-      };
-      setFilters(safeFilters);
     }
+    
+    // Cargar configuración de filtros dinámicos
+    if (module.dynamicFilters) {
+      setFilterConfig(module.dynamicFilters as FilterConfig[]);
+    } else {
+      setFilterConfig([]);
+    }
+    
+    setAppliedFilters([]);
     
     moduleService.updateModuleLastUsed(module.id);
     updateModules();
@@ -337,12 +405,15 @@ const QueryManualPage = () => {
               Exportar PDF
             </Button>
           </div>
-          <FilterPanel
-            filters={filters}
-            setFilters={setFilters}
-            onApplyFilters={applyFilters}
-          />
-          <ResultsTable results={filteredResults} />
+          <div className="space-y-6">
+            <DynamicFilterPanel
+              filterConfig={filterConfig}
+              onFiltersApply={applyDynamicFilters}
+              appliedFilters={appliedFilters}
+              setAppliedFilters={setAppliedFilters}
+            />
+            <ResultsTable results={filteredResults} />
+          </div>
         </TabsContent>
 
         <TabsContent value="modules">

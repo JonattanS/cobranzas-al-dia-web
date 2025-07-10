@@ -1,20 +1,22 @@
-
 // Servicio para gestionar módulos persistentes en el código fuente
 export interface PersistentModule {
   id: string;
   name: string;
   description: string;
   query: string;
-  filters: Record<string, any>;
+  filters: any;
+  folderId: string;
   createdAt: string;
-  lastUsed: string;
-  usageCount: number;
+  lastUsed?: string;
   isMainFunction?: boolean;
-  folderId?: string;
   dashboardConfig?: {
     charts: any[];
     kpis: any[];
   };
+  dynamicFilters?: Array<{
+    columnName: string;
+    enabled: boolean;
+  }>;
 }
 
 export interface ModuleFolder {
