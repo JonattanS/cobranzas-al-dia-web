@@ -27,21 +27,20 @@ export const FilterConfigDialog = ({
   selectedFilters, 
   onFiltersChange 
 }: FilterConfigDialogProps) => {
-  const [localFilters, setLocalFilters] = useState<FilterConfig[]>(selectedFilters);
+  const [localFilters, setLocalFilters] = useState<FilterConfig[]>([]);
   const columns = schemaService.getTableColumns();
 
   useEffect(() => {
     // Inicializar filtros con todas las columnas disponibles
-    if (selectedFilters.length === 0) {
-      const initialFilters = columns.map(col => ({
+    const initialFilters = columns.map(col => {
+      const existingFilter = selectedFilters.find(f => f.columnName === col.name);
+      return {
         columnName: col.name,
-        enabled: false
-      }));
-      setLocalFilters(initialFilters);
-    } else {
-      setLocalFilters(selectedFilters);
-    }
-  }, [selectedFilters, columns]);
+        enabled: existingFilter?.enabled || false
+      };
+    });
+    setLocalFilters(initialFilters);
+  }, [selectedFilters, columns, isOpen]);
 
   const handleFilterToggle = (columnName: string, enabled: boolean) => {
     setLocalFilters(prev => 
@@ -54,7 +53,21 @@ export const FilterConfigDialog = ({
   };
 
   const handleSave = () => {
+    console.log('Guardando filtros:', localFilters);
     onFiltersChange(localFilters);
+    onClose();
+  };
+
+  const handleCancel = () => {
+    // Restaurar estado original
+    const originalFilters = columns.map(col => {
+      const existingFilter = selectedFilters.find(f => f.columnName === col.name);
+      return {
+        columnName: col.name,
+        enabled: existingFilter?.enabled || false
+      };
+    });
+    setLocalFilters(originalFilters);
     onClose();
   };
 
@@ -76,7 +89,7 @@ export const FilterConfigDialog = ({
 
   return (
     <TooltipProvider>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleCancel}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
@@ -160,11 +173,12 @@ export const FilterConfigDialog = ({
             </ScrollArea>
 
             <div className="flex justify-end space-x-2 pt-4 border-t">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
               <Button onClick={handleSave}>
-                Configurar Filtros ({enabledCount})
+                <Filter className="h-4 w-4 mr-2" />
+                Guardar Filtros ({enabledCount})
               </Button>
             </div>
           </div>
