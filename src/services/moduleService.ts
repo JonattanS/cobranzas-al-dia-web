@@ -8,6 +8,7 @@ export interface PersistentModule {
   folderId: string;
   createdAt: string;
   lastUsed?: string;
+  usageCount?: number;
   isMainFunction?: boolean;
   dashboardConfig?: {
     charts: any[];
