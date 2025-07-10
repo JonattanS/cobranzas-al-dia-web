@@ -172,11 +172,20 @@ export const FilterConfigDialog = ({
               </div>
             </ScrollArea>
 
-            <div className="flex justify-end space-x-2 pt-4 border-t">
-              <Button variant="outline" onClick={handleCancel}>
+            {/* Botones de acción - MUY VISIBLES */}
+            <div className="flex justify-end space-x-3 pt-6 border-t-2 border-slate-200 dark:border-slate-700">
+              <Button 
+                variant="outline" 
+                onClick={handleCancel}
+                className="px-6"
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleSave}>
+              <Button 
+                onClick={handleSave}
+                className="px-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+                size="default"
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 Guardar Filtros ({enabledCount})
               </Button>
