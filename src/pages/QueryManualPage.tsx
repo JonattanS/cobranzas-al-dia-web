@@ -16,6 +16,7 @@ import { SaveModuleDialog } from '@/components/query-manual/SaveModuleDialog';
 import { QueryBuilder } from '@/components/query-builder/QueryBuilder';
 import { Card, CardContent } from '@/components/ui/card';
 import { Filter } from 'lucide-react';
+import { FilterConfigDialog } from '@/components/query-manual/FilterConfigDialog';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -53,9 +54,10 @@ const QueryManualPage = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [moduleForm, setModuleForm] = useState({ name: '', description: '' });
 
-  // Nuevos estados para filtros dinámicos
+  // Estados para filtros dinámicos
   const [filterConfig, setFilterConfig] = useState<FilterConfig[]>([]);
   const [appliedFilters, setAppliedFilters] = useState<FilterValue[]>([]);
+  const [showFilterConfigDialog, setShowFilterConfigDialog] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'visual' | 'sql' | 'filters' | 'modules'>('visual');
 
@@ -214,6 +216,17 @@ const QueryManualPage = () => {
     });
   };
 
+  const handleFilterConfigSave = (newFilterConfig: FilterConfig[]) => {
+    setFilterConfig(newFilterConfig);
+    setAppliedFilters([]); // Limpiar filtros aplicados al cambiar configuración
+    
+    const enabledCount = newFilterConfig.filter(f => f.enabled).length;
+    toast({
+      title: "Filtros configurados",
+      description: `Se configuraron ${enabledCount} filtros dinámicos para este módulo`,
+    });
+  };
+
   const saveAsModule = (dashboardConfig?: any, dynamicFilterConfig?: FilterConfig[]) => {
     if (!moduleForm.name.trim()) {
       toast({
@@ -232,13 +245,12 @@ const QueryManualPage = () => {
         filters: queryConfig,
         folderId: 'default-folder',
         dashboardConfig: dashboardConfig || { charts: [], kpis: [] },
-        dynamicFilters: dynamicFilterConfig || []
+        dynamicFilters: dynamicFilterConfig || filterConfig
       });
 
       updateModules();
       setShowSaveDialog(false);
       setModuleForm({ name: '', description: '' });
-      setFilterConfig([]);
 
       toast({
         title: "Módulo guardado",
@@ -342,6 +354,8 @@ const QueryManualPage = () => {
     });
   };
 
+  const enabledFiltersCount = filterConfig.filter(f => f.enabled).length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
@@ -365,7 +379,14 @@ const QueryManualPage = () => {
         <TabsList>
           <TabsTrigger value="visual">Constructor Visual</TabsTrigger>
           <TabsTrigger value="sql">Editor SQL</TabsTrigger>
-          <TabsTrigger value="filters">Filtros y Resultados</TabsTrigger>
+          <TabsTrigger value="filters">
+            Filtros y Resultados
+            {enabledFiltersCount > 0 && (
+              <span className="ml-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+                {enabledFiltersCount}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="modules">Módulos Guardados ({savedModules.length})</TabsTrigger>
         </TabsList>
 
@@ -408,13 +429,43 @@ const QueryManualPage = () => {
                   <Button onClick={exportPDF} disabled={filteredResults.length === 0}>
                     Exportar PDF
                   </Button>
+                  {enabledFiltersCount === 0 && (
+                    <Button 
+                      onClick={() => setShowFilterConfigDialog(true)}
+                      variant="outline"
+                    >
+                      <Filter className="h-4 w-4 mr-2" />
+                      Configurar Filtros
+                    </Button>
+                  )}
                 </div>
-                <DynamicFilterPanel
-                  filterConfig={filterConfig}
-                  onFiltersApply={applyDynamicFilters}
-                  appliedFilters={appliedFilters}
-                  setAppliedFilters={setAppliedFilters}
-                />
+                
+                {enabledFiltersCount > 0 ? (
+                  <DynamicFilterPanel
+                    filterConfig={filterConfig}
+                    onFiltersApply={applyDynamicFilters}
+                    appliedFilters={appliedFilters}
+                    setAppliedFilters={setAppliedFilters}
+                    onConfigureFilters={() => setShowFilterConfigDialog(true)}
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <Filter className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400">
+                        Sin Filtros Configurados
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-500 mt-2 mb-4">
+                        Este módulo no tiene filtros dinámicos configurados.
+                      </p>
+                      <Button onClick={() => setShowFilterConfigDialog(true)}>
+                        <Filter className="h-4 w-4 mr-2" />
+                        Configurar Filtros
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+                
                 <ResultsTable results={filteredResults} />
               </>
             ) : (
@@ -444,11 +495,10 @@ const QueryManualPage = () => {
                         Ir al Editor SQL
                       </Button>
                       <Button 
-                        onClick={() => setShowSaveDialog(true)}
-                        disabled={!query.trim()}
+                        onClick={() => setShowFilterConfigDialog(true)}
                       >
                         <Filter className="h-4 w-4 mr-2" />
-                        Configurar Filtros y Guardar
+                        Configurar Filtros
                       </Button>
                     </div>
                   </CardContent>
@@ -477,6 +527,13 @@ const QueryManualPage = () => {
         availableFields={availableFields}
         filterConfig={filterConfig}
         setFilterConfig={setFilterConfig}
+      />
+
+      <FilterConfigDialog
+        isOpen={showFilterConfigDialog}
+        onClose={() => setShowFilterConfigDialog(false)}
+        selectedFilters={filterConfig}
+        onFiltersChange={handleFilterConfigSave}
       />
     </div>
   );

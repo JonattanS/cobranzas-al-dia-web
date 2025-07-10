@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, Settings } from 'lucide-react';
 import { schemaService } from '@/services/schemaService';
 
 interface FilterConfig {
@@ -27,13 +27,15 @@ interface DynamicFilterPanelProps {
   onFiltersApply: (filters: FilterValue[]) => void;
   appliedFilters: FilterValue[];
   setAppliedFilters: (filters: FilterValue[]) => void;
+  onConfigureFilters: () => void;
 }
 
 export const DynamicFilterPanel = ({ 
   filterConfig, 
   onFiltersApply, 
   appliedFilters, 
-  setAppliedFilters 
+  setAppliedFilters,
+  onConfigureFilters
 }: DynamicFilterPanelProps) => {
   const columns = schemaService.getTableColumns();
   const enabledColumns = filterConfig
@@ -199,9 +201,13 @@ export const DynamicFilterPanel = ({
           <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400">
             Sin Filtros Configurados
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2 mb-4">
             Este módulo no tiene filtros dinámicos configurados.
           </p>
+          <Button onClick={onConfigureFilters}>
+            <Filter className="h-4 w-4 mr-2" />
+            Configurar Filtros
+          </Button>
         </CardContent>
       </Card>
     );
@@ -210,11 +216,21 @@ export const DynamicFilterPanel = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Filter className="h-5 w-5" />
-          <span>Filtros Dinámicos</span>
-          <Badge variant="outline">{enabledColumns.length} filtros</Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-5 w-5" />
+            <CardTitle>Filtros Dinámicos</CardTitle>
+            <Badge variant="outline">{enabledColumns.length} filtros</Badge>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onConfigureFilters}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Configurar
+          </Button>
+        </div>
         <CardDescription>
           Filtra los resultados en tiempo real usando los filtros configurados para este módulo
         </CardDescription>
