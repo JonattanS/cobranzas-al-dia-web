@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -15,6 +14,8 @@ import { ModulesPanel } from '@/components/query-manual/ModulesPanel';
 import { ResultsTable } from '@/components/query-manual/ResultsTable';
 import { SaveModuleDialog } from '@/components/query-manual/SaveModuleDialog';
 import { QueryBuilder } from '@/components/query-builder/QueryBuilder';
+import { Card, CardContent } from '@/components/ui/card';
+import { Filter } from 'lucide-react';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -397,22 +398,63 @@ const QueryManualPage = () => {
         </TabsContent>
 
         <TabsContent value="filters">
-          <div className="flex gap-2 mb-4">
-            <Button onClick={exportResults} disabled={filteredResults.length === 0}>
-              Exportar CSV
-            </Button>
-            <Button onClick={exportPDF} disabled={filteredResults.length === 0}>
-              Exportar PDF
-            </Button>
-          </div>
           <div className="space-y-6">
-            <DynamicFilterPanel
-              filterConfig={filterConfig}
-              onFiltersApply={applyDynamicFilters}
-              appliedFilters={appliedFilters}
-              setAppliedFilters={setAppliedFilters}
-            />
-            <ResultsTable results={filteredResults} />
+            {results.length > 0 ? (
+              <>
+                <div className="flex gap-2 mb-4">
+                  <Button onClick={exportResults} disabled={filteredResults.length === 0}>
+                    Exportar CSV
+                  </Button>
+                  <Button onClick={exportPDF} disabled={filteredResults.length === 0}>
+                    Exportar PDF
+                  </Button>
+                </div>
+                <DynamicFilterPanel
+                  filterConfig={filterConfig}
+                  onFiltersApply={applyDynamicFilters}
+                  appliedFilters={appliedFilters}
+                  setAppliedFilters={setAppliedFilters}
+                />
+                <ResultsTable results={filteredResults} />
+              </>
+            ) : (
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Filter className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                      No hay resultados para filtrar
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-500 mb-6">
+                      Ejecuta una consulta primero para ver los resultados y aplicar filtros dinámicos.
+                      <br />
+                      También puedes configurar qué filtros estarán disponibles para este módulo.
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <Button 
+                        onClick={() => setActiveTab('visual')}
+                        variant="outline"
+                      >
+                        Ir al Constructor Visual
+                      </Button>
+                      <Button 
+                        onClick={() => setActiveTab('sql')}
+                        variant="outline"
+                      >
+                        Ir al Editor SQL
+                      </Button>
+                      <Button 
+                        onClick={() => setShowSaveDialog(true)}
+                        disabled={!query.trim()}
+                      >
+                        <Filter className="h-4 w-4 mr-2" />
+                        Configurar Filtros y Guardar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -433,6 +475,8 @@ const QueryManualPage = () => {
         setModuleForm={setModuleForm}
         onSave={saveAsModule}
         availableFields={availableFields}
+        filterConfig={filterConfig}
+        setFilterConfig={setFilterConfig}
       />
     </div>
   );
