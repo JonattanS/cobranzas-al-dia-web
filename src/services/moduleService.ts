@@ -1,3 +1,4 @@
+
 // Servicio para gestionar módulos persistentes en el código fuente
 export interface PersistentModule {
   id: string;
@@ -44,6 +45,7 @@ const PERSISTENT_MODULES: PersistentModule[] = [
     WHERE anf_cla = 1 AND anf_cre = 1 
     ORDER BY doc_fec DESC`,
     filters: {},
+    folderId: 'default-folder',
     createdAt: '2025-01-07T00:00:00.000Z',
     lastUsed: '2025-01-07T00:00:00.000Z',
     usageCount: 5,
@@ -64,6 +66,7 @@ const PERSISTENT_MODULES: PersistentModule[] = [
     HAVING SUM(mov_val) > 0
     ORDER BY saldo_total DESC`,
     filters: {},
+    folderId: 'default-folder',
     createdAt: '2025-01-07T00:00:00.000Z',
     lastUsed: '2025-01-07T00:00:00.000Z',
     usageCount: 3,
