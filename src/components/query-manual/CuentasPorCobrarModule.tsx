@@ -12,41 +12,87 @@ export const CuentasPorCobrarModule = () => {
   const [isRegistered, setIsRegistered] = useState(false);
 
   useEffect(() => {
-    // Registrar el módulo como función principal
-    const moduleConfig = {
-      name: 'Cuentas por Cobrar',
-      description: 'Gestión completa de clientes y documentos por cobrar. Incluye análisis de cartera, seguimiento de pagos y reportes detallados.',
-      query: `SELECT 
-        ter_nit,
-        ter_raz,
-        doc_fec,
-        doc_num,
-        mov_val,
-        clc_cod
-      FROM public.con_mov 
-      WHERE anf_cla = 1 AND anf_cre = 1 
-      ORDER BY doc_fec DESC`,
-      filters: {},
-      folderId: 'default-folder',
-      isMainFunction: true,
-      dashboardConfig: {
-        charts: [],
-        kpis: []
-      },
-      dynamicFilters: []
+    const checkAndRegisterModule = () => {
+      // Configuración del módulo como función principal
+      const moduleConfig = {
+        name: 'Cuentas por Cobrar - Gestión Integral',
+        description: 'Gestión completa de clientes y documentos por cobrar. Incluye análisis de cartera, seguimiento de pagos y reportes detallados.',
+        query: `SELECT 
+          ter_nit as "NIT/CC",
+          ter_raz as "Cliente",
+          doc_fec as "Fecha",
+          doc_num as "Documento",
+          mov_val as "Valor",
+          clc_cod as "Código"
+        FROM public.con_mov 
+        WHERE anf_cla = 1 AND anf_cre = 1 
+        ORDER BY doc_fec DESC`,
+        filters: {},
+        folderId: 'default-folder',
+        isMainFunction: true,
+        dashboardConfig: {
+          charts: [
+            {
+              id: 'saldos-por-cliente',
+              type: 'bar',
+              title: 'Top 10 Clientes por Saldo',
+              dataKey: 'Valor',
+              xAxisKey: 'Cliente'
+            },
+            {
+              id: 'evolucion-cartera',
+              type: 'line',
+              title: 'Evolución de Cartera',
+              dataKey: 'Valor',
+              xAxisKey: 'Fecha'
+            }
+          ],
+          kpis: [
+            {
+              id: 'total-cartera',
+              title: 'Total Cartera',
+              field: 'Valor',
+              operation: 'sum',
+              format: 'currency'
+            },
+            {
+              id: 'total-clientes',
+              title: 'Total Clientes',
+              field: 'Cliente',
+              operation: 'count_distinct'
+            }
+          ]
+        },
+        dynamicFilters: [
+          { columnName: 'Cliente', enabled: true },
+          { columnName: 'Fecha', enabled: true },
+          { columnName: 'NIT/CC', enabled: true },
+          { columnName: 'Código', enabled: true }
+        ]
+      };
+
+      // Verificar si ya existe un módulo con este nombre
+      const existingModules = moduleService.getAllModules();
+      const moduleExists = existingModules.some(m => m.name === moduleConfig.name);
+      
+      if (!moduleExists) {
+        console.log('Registrando módulo Cuentas por Cobrar - Gestión Integral como función principal');
+        try {
+          const savedModule = moduleService.saveModule(moduleConfig);
+          console.log('Módulo registrado exitosamente:', savedModule);
+          setIsRegistered(true);
+        } catch (error) {
+          console.error('Error al registrar el módulo:', error);
+          setIsRegistered(false);
+        }
+      } else {
+        console.log('El módulo ya existe en el repositorio');
+        setIsRegistered(true);
+      }
     };
 
-    // Verificar si ya existe
-    const existingModules = moduleService.getAllModules();
-    const moduleExists = existingModules.some(m => m.name === moduleConfig.name);
-    
-    if (!moduleExists) {
-      console.log('Registrando módulo Cuentas por Cobrar como función principal');
-      moduleService.saveModule(moduleConfig);
-      setIsRegistered(true);
-    } else {
-      setIsRegistered(true);
-    }
+    // Ejecutar el registro del módulo
+    checkAndRegisterModule();
   }, []);
 
   const handleNavigate = () => {

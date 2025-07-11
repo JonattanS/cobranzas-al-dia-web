@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Filter, FileText, BarChart3 } from 'lucide-react';
+import { Save, Filter, FileText, BarChart3, Settings } from 'lucide-react';
 import { FilterConfigDialog } from './FilterConfigDialog';
 
 interface FilterConfig {
@@ -24,6 +24,7 @@ interface SaveModuleDialogProps {
   filterConfig?: FilterConfig[];
   setFilterConfig?: (config: FilterConfig[]) => void;
   dashboardConfig?: any;
+  onConfigureDashboard?: () => void;
 }
 
 export const SaveModuleDialog = ({ 
@@ -35,7 +36,8 @@ export const SaveModuleDialog = ({
   availableFields,
   filterConfig = [],
   setFilterConfig,
-  dashboardConfig
+  dashboardConfig,
+  onConfigureDashboard
 }: SaveModuleDialogProps) => {
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'filters' | 'dashboard'>('basic');
@@ -148,18 +150,33 @@ export const SaveModuleDialog = ({
             </TabsContent>
 
             <TabsContent value="dashboard" className="space-y-4 mt-6">
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">
+              <div className={`${hasChartsConfigured ? 'bg-green-50 dark:bg-green-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'} p-4 rounded-lg`}>
+                <h4 className={`font-medium ${hasChartsConfigured ? 'text-green-900 dark:text-green-100' : 'text-yellow-900 dark:text-yellow-100'} mb-2`}>
                   Configuración del Dashboard
                 </h4>
-                <p className="text-sm text-green-600 dark:text-green-400 mb-3">
+                <p className={`text-sm ${hasChartsConfigured ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'} mb-3`}>
                   {hasChartsConfigured 
                     ? `Dashboard configurado con ${dashboardConfig.charts.length} gráfico(s). Esta configuración se guardará con el módulo.`
-                    : 'No hay dashboard configurado para este módulo. Puedes agregar uno desde la pestaña "Dashboard".'
+                    : 'No hay dashboard configurado para este módulo. Puedes configurar uno ahora o después de guardar el módulo.'
                   }
                 </p>
-                <div className="text-sm">
-                  <strong>Estado:</strong> {hasChartsConfigured ? '✅ Configurado' : '⚠️ Sin configurar'}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <strong>Estado:</strong> {hasChartsConfigured ? '✅ Configurado' : '⚠️ Sin configurar'}
+                  </div>
+                  {onConfigureDashboard && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        onConfigureDashboard();
+                        onClose();
+                      }}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configurar Dashboard
+                    </Button>
+                  )}
                 </div>
               </div>
             </TabsContent>
