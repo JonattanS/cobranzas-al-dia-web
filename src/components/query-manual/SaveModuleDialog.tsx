@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Filter, FileText } from 'lucide-react';
+import { Save, Filter, FileText, BarChart3 } from 'lucide-react';
 import { FilterConfigDialog } from './FilterConfigDialog';
 
 interface FilterConfig {
@@ -23,6 +23,7 @@ interface SaveModuleDialogProps {
   availableFields: string[];
   filterConfig?: FilterConfig[];
   setFilterConfig?: (config: FilterConfig[]) => void;
+  dashboardConfig?: any;
 }
 
 export const SaveModuleDialog = ({ 
@@ -33,16 +34,19 @@ export const SaveModuleDialog = ({
   onSave, 
   availableFields,
   filterConfig = [],
-  setFilterConfig
+  setFilterConfig,
+  dashboardConfig
 }: SaveModuleDialogProps) => {
   const [showFilterDialog, setShowFilterDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'filters'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'filters' | 'dashboard'>('basic');
 
   const handleSave = () => {
-    onSave(undefined, filterConfig);
+    console.log('Guardando módulo con dashboard config:', dashboardConfig);
+    onSave(dashboardConfig, filterConfig);
   };
 
   const enabledFiltersCount = filterConfig.filter(f => f.enabled).length;
+  const hasChartsConfigured = dashboardConfig && dashboardConfig.charts && dashboardConfig.charts.length > 0;
 
   return (
     <>
@@ -54,19 +58,23 @@ export const SaveModuleDialog = ({
               <span>Guardar como Módulo</span>
             </DialogTitle>
             <DialogDescription>
-              Configura los detalles del módulo y los filtros dinámicos que estarán disponibles
+              Configura los detalles del módulo, filtros dinámicos y dashboard que estarán disponibles
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as 'basic' | 'filters')}>
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as 'basic' | 'filters' | 'dashboard')}>
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic" className="flex items-center space-x-2">
                 <FileText className="h-4 w-4" />
-                <span>Información Básica</span>
+                <span>Información</span>
               </TabsTrigger>
               <TabsTrigger value="filters" className="flex items-center space-x-2">
                 <Filter className="h-4 w-4" />
                 <span>Filtros ({enabledFiltersCount})</span>
+              </TabsTrigger>
+              <TabsTrigger value="dashboard" className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4" />
+                <span>Dashboard</span>
               </TabsTrigger>
             </TabsList>
 
@@ -136,6 +144,23 @@ export const SaveModuleDialog = ({
                     </div>
                   </div>
                 )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="dashboard" className="space-y-4 mt-6">
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">
+                  Configuración del Dashboard
+                </h4>
+                <p className="text-sm text-green-600 dark:text-green-400 mb-3">
+                  {hasChartsConfigured 
+                    ? `Dashboard configurado con ${dashboardConfig.charts.length} gráfico(s). Esta configuración se guardará con el módulo.`
+                    : 'No hay dashboard configurado para este módulo. Puedes agregar uno desde la pestaña "Dashboard".'
+                  }
+                </p>
+                <div className="text-sm">
+                  <strong>Estado:</strong> {hasChartsConfigured ? '✅ Configurado' : '⚠️ Sin configurar'}
+                </div>
               </div>
             </TabsContent>
           </Tabs>

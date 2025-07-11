@@ -90,8 +90,8 @@ export const FilterConfigDialog = ({
   return (
     <TooltipProvider>
       <Dialog open={isOpen} onOpenChange={handleCancel}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl h-[85vh] max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center space-x-2">
               <Filter className="h-5 w-5" />
               <span>Configurar Filtros Dinámicos</span>
@@ -102,8 +102,8 @@ export const FilterConfigDialog = ({
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="flex-1 flex flex-col min-h-0 space-y-4">
+            <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
               <div>
                 <h3 className="font-medium text-blue-900 dark:text-blue-100">
                   Filtros seleccionados: {enabledCount} de {columns.length}
@@ -114,66 +114,68 @@ export const FilterConfigDialog = ({
               </div>
             </div>
 
-            <ScrollArea className="h-96 border rounded-lg p-4">
-              <div className="space-y-3">
-                {columns.map((column) => {
-                  const filter = localFilters.find(f => f.columnName === column.name);
-                  const isEnabled = filter?.enabled || false;
-                  
-                  return (
-                    <div 
-                      key={column.name}
-                      className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
-                    >
-                      <Checkbox
-                        checked={isEnabled}
-                        onCheckedChange={(checked) => 
-                          handleFilterToggle(column.name, checked as boolean)
-                        }
-                      />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg">{getTypeIcon(column)}</span>
-                          <h4 className="font-medium truncate">{column.description}</h4>
-                          <Badge variant="outline" className="shrink-0">
-                            {getTypeBadge(column)}
-                          </Badge>
-                        </div>
+            <div className="flex-1 min-h-0">
+              <ScrollArea className="h-full border rounded-lg p-4">
+                <div className="space-y-3">
+                  {columns.map((column) => {
+                    const filter = localFilters.find(f => f.columnName === column.name);
+                    const isEnabled = filter?.enabled || false;
+                    
+                    return (
+                      <div 
+                        key={column.name}
+                        className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
+                      >
+                        <Checkbox
+                          checked={isEnabled}
+                          onCheckedChange={(checked) => 
+                            handleFilterToggle(column.name, checked as boolean)
+                          }
+                        />
                         
-                        <div className="flex items-center space-x-2 mt-1">
-                          <code className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                            {column.name}
-                          </code>
-                          <span className="text-xs text-slate-500">
-                            {column.type}
-                          </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg">{getTypeIcon(column)}</span>
+                            <h4 className="font-medium truncate">{column.description}</h4>
+                            <Badge variant="outline" className="shrink-0">
+                              {getTypeBadge(column)}
+                            </Badge>
+                          </div>
                           
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="h-3 w-3 text-slate-400" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">
-                                Campo técnico: {column.name}<br/>
-                                Tipo: {column.type}<br/>
-                                {column.isNumeric && "Filtros: =, >, <, >=, <=, entre"}<br/>
-                                {column.isDate && "Filtros: fecha exacta, rango de fechas"}<br/>
-                                {column.isText && "Filtros: contiene, exacto, empieza con"}<br/>
-                                {column.type === 'boolean' && "Filtros: sí/no"}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <code className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                              {column.name}
+                            </code>
+                            <span className="text-xs text-slate-500">
+                              {column.type}
+                            </span>
+                            
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="h-3 w-3 text-slate-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">
+                                  Campo técnico: {column.name}<br/>
+                                  Tipo: {column.type}<br/>
+                                  {column.isNumeric && "Filtros: =, >, <, >=, <=, entre"}<br/>
+                                  {column.isDate && "Filtros: fecha exacta, rango de fechas"}<br/>
+                                  {column.isText && "Filtros: contiene, exacto, empieza con"}<br/>
+                                  {column.type === 'boolean' && "Filtros: sí/no"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
 
-            {/* Botones de acción - MUY VISIBLES */}
-            <div className="flex justify-end space-x-3 pt-6 border-t-2 border-slate-200 dark:border-slate-700">
+            {/* Botones de acción - Siempre visibles */}
+            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
               <Button 
                 variant="outline" 
                 onClick={handleCancel}
@@ -183,7 +185,7 @@ export const FilterConfigDialog = ({
               </Button>
               <Button 
                 onClick={handleSave}
-                className="px-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="px-6"
                 size="default"
               >
                 <Filter className="h-4 w-4 mr-2" />

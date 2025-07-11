@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { CuentasPorCobrarModule } from '@/components/query-manual/CuentasPorCobrarModule';
 
 const CuentasPorCobrarPage = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const CuentasPorCobrarPage = () => {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="clientes">Clientes</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          <TabsTrigger value="modulo">Configuración del Módulo</TabsTrigger>
         </TabsList>
         
         <TabsContent value="dashboard" className="space-y-4">
@@ -56,6 +58,12 @@ const CuentasPorCobrarPage = () => {
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="modulo" className="space-y-4">
+          <div className="max-w-4xl mx-auto">
+            <CuentasPorCobrarModule />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
