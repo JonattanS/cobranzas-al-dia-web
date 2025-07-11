@@ -14,23 +14,31 @@ export const CuentasPorCobrarModule = () => {
   useEffect(() => {
     // Registrar el módulo como función principal
     const moduleConfig = {
-      id: 'cuentas-por-cobrar',
       name: 'Cuentas por Cobrar',
       description: 'Gestión completa de clientes y documentos por cobrar. Incluye análisis de cartera, seguimiento de pagos y reportes detallados.',
-      type: 'main-function' as const,
-      path: '/cuentas-por-cobrar',
-      icon: 'Receipt',
-      category: 'Finanzas',
-      tags: ['cuentas', 'cobrar', 'clientes', 'cartera', 'pagos'],
-      dashboardConfig: null,
-      filterConfig: [],
-      createdAt: new Date(),
-      lastModified: new Date()
+      query: `SELECT 
+        ter_nit,
+        ter_raz,
+        doc_fec,
+        doc_num,
+        mov_val,
+        clc_cod
+      FROM public.con_mov 
+      WHERE anf_cla = 1 AND anf_cre = 1 
+      ORDER BY doc_fec DESC`,
+      filters: {},
+      folderId: 'default-folder',
+      isMainFunction: true,
+      dashboardConfig: {
+        charts: [],
+        kpis: []
+      },
+      dynamicFilters: []
     };
 
     // Verificar si ya existe
-    const existingModules = moduleService.getModules();
-    const moduleExists = existingModules.some(m => m.id === moduleConfig.id);
+    const existingModules = moduleService.getAllModules();
+    const moduleExists = existingModules.some(m => m.name === moduleConfig.name);
     
     if (!moduleExists) {
       console.log('Registrando módulo Cuentas por Cobrar como función principal');
