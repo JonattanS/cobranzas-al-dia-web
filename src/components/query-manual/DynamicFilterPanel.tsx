@@ -38,10 +38,15 @@ export const DynamicFilterPanel = ({
   onConfigureFilters
 }: DynamicFilterPanelProps) => {
   const columns = schemaService.getTableColumns();
+  
+  // Solo mostrar columnas que están explícitamente habilitadas en filterConfig
   const enabledColumns = filterConfig
     .filter(f => f.enabled)
     .map(f => columns.find(col => col.name === f.columnName))
     .filter(Boolean);
+
+  console.log('DynamicFilterPanel - filterConfig recibido:', filterConfig);
+  console.log('DynamicFilterPanel - enabledColumns calculadas:', enabledColumns);
 
   const updateFilter = (columnName: string, updates: Partial<FilterValue>) => {
     const existingFilterIndex = appliedFilters.findIndex(f => f.columnName === columnName);
@@ -193,7 +198,8 @@ export const DynamicFilterPanel = ({
     f.value !== '' && f.value !== null && f.value !== undefined
   );
 
-  if (enabledColumns.length === 0) {
+  // Si no hay filtros configurados, mostrar mensaje de configuración
+  if (!filterConfig || filterConfig.length === 0 || enabledColumns.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-8">
@@ -202,7 +208,7 @@ export const DynamicFilterPanel = ({
             Sin Filtros Configurados
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-500 mt-2 mb-4">
-            Este módulo no tiene filtros dinámicos configurados.
+            Este módulo no tiene filtros dinámicos configurados. Configura los filtros que quieres que estén disponibles.
           </p>
           <Button onClick={onConfigureFilters}>
             <Filter className="h-4 w-4 mr-2" />
@@ -232,7 +238,7 @@ export const DynamicFilterPanel = ({
           </Button>
         </div>
         <CardDescription>
-          Filtra los resultados en tiempo real usando los filtros configurados para este módulo
+          Filtra los resultados usando los filtros configurados para este módulo
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

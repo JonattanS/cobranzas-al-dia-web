@@ -30,29 +30,40 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onMod
     }
 
     console.log('Promoviendo módulo a función principal:', module.name);
+    console.log('Filtros dinámicos originales:', module.dynamicFilters);
     
     try {
-      const success = moduleService.promoteToMainFunction(module.id, 'default-folder');
-      if (success) {
-        // Actualizar la lista inmediatamente
-        onModulesUpdate();
-        
-        toast({
-          title: "Función principal creada",
-          description: `${module.name} ahora es una función principal y aparecerá en el menú lateral`,
-        });
-        
-        // Pequeño delay para asegurar que el módulo se actualice
-        setTimeout(() => {
-          navigate(`/dynamic-function/${module.id}`);
-        }, 500);
-      } else {
-        toast({
-          title: "Error",
-          description: "No se pudo crear la función principal",
-          variant: "destructive",
-        });
-      }
+      // Crear un nuevo módulo como función principal preservando todos los datos
+      const newMainFunction = moduleService.saveModule({
+        name: module.name,
+        description: module.description,
+        query: module.query,
+        filters: module.filters,
+        folderId: 'default-folder',
+        isMainFunction: true,
+        dashboardConfig: module.dashboardConfig || { charts: [], kpis: [] },
+        dynamicFilters: module.dynamicFilters || [] // Preservar filtros exactos
+      });
+
+      console.log('Nueva función principal creada:', newMainFunction);
+      console.log('Filtros dinámicos preservados:', newMainFunction.dynamicFilters);
+
+      // Eliminar el módulo original
+      moduleService.deleteModule(module.id);
+      
+      // Actualizar la lista inmediatamente
+      onModulesUpdate();
+      
+      toast({
+        title: "Función principal creada",
+        description: `${module.name} ahora es una función principal con los filtros configurados preservados`,
+      });
+      
+      // Pequeño delay para asegurar que el módulo se actualice
+      setTimeout(() => {
+        navigate(`/dynamic-function/${newMainFunction.id}`);
+      }, 500);
+      
     } catch (error) {
       console.error('Error promoting module:', error);
       toast({
@@ -109,10 +120,15 @@ export const ModulesPanel = ({ savedModules, onLoadModule, onDeleteModule, onMod
                       )}
                     </div>
                     <p className="text-sm text-slate-600 dark:text-slate-400">{module.description}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-500">
-                      Creado: {new Date(module.createdAt).toLocaleDateString()} | 
-                      Último uso: {new Date(module.lastUsed).toLocaleDateString()}
-                    </p>
+                    <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-500">
+                      <span>Creado: {new Date(module.createdAt).toLocaleDateString()}</span>
+                      <span>Último uso: {new Date(module.lastUsed || module.createdAt).toLocaleDateString()}</span>
+                      {module.dynamicFilters && module.dynamicFilters.length > 0 && (
+                        <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">
+                          {module.dynamicFilters.filter(f => f.enabled).length} filtros
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex space-x-2">
                     <Button 
