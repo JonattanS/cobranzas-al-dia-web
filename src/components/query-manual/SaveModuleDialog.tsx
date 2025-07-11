@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Save, Filter, FileText, BarChart3, Settings } from 'lucide-react';
 import { FilterConfigDialog } from './FilterConfigDialog';
+import { DashboardConfigDialog } from '../dashboard-config/DashboardConfigDialog';
 
 interface FilterConfig {
   columnName: string;
@@ -40,15 +41,23 @@ export const SaveModuleDialog = ({
   onConfigureDashboard
 }: SaveModuleDialogProps) => {
   const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [showDashboardDialog, setShowDashboardDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'filters' | 'dashboard'>('basic');
+  const [currentDashboardConfig, setCurrentDashboardConfig] = useState(dashboardConfig || { charts: [], kpis: [] });
 
   const handleSave = () => {
-    console.log('Guardando módulo con dashboard config:', dashboardConfig);
-    onSave(dashboardConfig, filterConfig);
+    console.log('Guardando módulo con dashboard config:', currentDashboardConfig);
+    onSave(currentDashboardConfig, filterConfig);
+  };
+
+  const handleDashboardSave = (config: any) => {
+    console.log('Configuración de dashboard guardada:', config);
+    setCurrentDashboardConfig(config);
+    setShowDashboardDialog(false);
   };
 
   const enabledFiltersCount = filterConfig.filter(f => f.enabled).length;
-  const hasChartsConfigured = dashboardConfig && dashboardConfig.charts && dashboardConfig.charts.length > 0;
+  const hasChartsConfigured = currentDashboardConfig && currentDashboardConfig.charts && currentDashboardConfig.charts.length > 0;
 
   return (
     <>
@@ -156,7 +165,7 @@ export const SaveModuleDialog = ({
                 </h4>
                 <p className={`text-sm ${hasChartsConfigured ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'} mb-3`}>
                   {hasChartsConfigured 
-                    ? `Dashboard configurado con ${dashboardConfig.charts.length} gráfico(s). Esta configuración se guardará con el módulo.`
+                    ? `Dashboard configurado con ${currentDashboardConfig.charts.length} gráfico(s). Esta configuración se guardará con el módulo.`
                     : 'No hay dashboard configurado para este módulo. Puedes configurar uno ahora o después de guardar el módulo.'
                   }
                 </p>
@@ -164,21 +173,32 @@ export const SaveModuleDialog = ({
                   <div className="text-sm">
                     <strong>Estado:</strong> {hasChartsConfigured ? '✅ Configurado' : '⚠️ Sin configurar'}
                   </div>
-                  {onConfigureDashboard && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        onConfigureDashboard();
-                        onClose();
-                      }}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configurar Dashboard
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowDashboardDialog(true)}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    {hasChartsConfigured ? 'Editar Dashboard' : 'Configurar Dashboard'}
+                  </Button>
                 </div>
               </div>
+
+              {hasChartsConfigured && (
+                <div className="space-y-2">
+                  <Label>Resumen de Configuración:</Label>
+                  <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg text-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <strong>Gráficos:</strong> {currentDashboardConfig.charts?.length || 0}
+                      </div>
+                      <div>
+                        <strong>KPIs:</strong> {currentDashboardConfig.kpis?.length || 0}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 
@@ -202,6 +222,14 @@ export const SaveModuleDialog = ({
           onFiltersChange={setFilterConfig}
         />
       )}
+
+      <DashboardConfigDialog
+        isOpen={showDashboardDialog}
+        onClose={() => setShowDashboardDialog(false)}
+        config={currentDashboardConfig}
+        onSave={handleDashboardSave}
+        availableFields={availableFields}
+      />
     </>
   );
 };
