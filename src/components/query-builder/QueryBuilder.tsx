@@ -1,11 +1,25 @@
-
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui/tabs';
 import { Database, Settings, Eye, Code } from 'lucide-react';
-import { schemaService, type QueryConfiguration, type QueryCondition } from '@/services/schemaService';
+import {
+  schemaService,
+  type QueryConfiguration,
+  type QueryCondition
+} from '@/services/schemaService';
 import { FieldSelector } from './FieldSelector';
 import { ConditionBuilder } from './ConditionBuilder';
 import { OrderGroupBuilder } from './OrderGroupBuilder';
@@ -16,7 +30,13 @@ interface QueryBuilderProps {
   initialConfig?: QueryConfiguration;
 }
 
-export const QueryBuilder = ({ onQueryGenerated, initialConfig }: QueryBuilderProps) => {
+export const QueryBuilder = ({
+  onQueryGenerated,
+  initialConfig
+}: QueryBuilderProps) => {
+  const { user } = useUser();
+  const isAdmin = user?.rolcod === 'adm';
+
   const [config, setConfig] = useState<QueryConfiguration>(
     initialConfig || {
       selectedFields: [],
@@ -27,7 +47,6 @@ export const QueryBuilder = ({ onQueryGenerated, initialConfig }: QueryBuilderPr
     }
   );
   const [generatedSQL, setGeneratedSQL] = useState('');
-  const { isAdmin } = useUser();
 
   useEffect(() => {
     const sql = schemaService.generateSQL(config);
@@ -98,7 +117,7 @@ export const QueryBuilder = ({ onQueryGenerated, initialConfig }: QueryBuilderPr
             <TabsTrigger value="fields">Campos</TabsTrigger>
             <TabsTrigger value="conditions">Condiciones</TabsTrigger>
             <TabsTrigger value="ordering">Ordenamiento</TabsTrigger>
-            {isAdmin() && <TabsTrigger value="sql">SQL Generado</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="sql">SQL Generado</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="fields">
@@ -125,11 +144,15 @@ export const QueryBuilder = ({ onQueryGenerated, initialConfig }: QueryBuilderPr
               groupBy={config.groupBy}
               onOrderByChange={updateOrderBy}
               onGroupByChange={updateGroupBy}
-              availableFields={config.selectedFields.length > 0 ? config.selectedFields : schemaService.getTableColumns().map(col => col.name)}
+              availableFields={
+                config.selectedFields.length > 0
+                  ? config.selectedFields
+                  : schemaService.getTableColumns().map(col => col.name)
+              }
             />
           </TabsContent>
 
-          {isAdmin() && (
+          {isAdmin && (
             <TabsContent value="sql">
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
@@ -138,7 +161,9 @@ export const QueryBuilder = ({ onQueryGenerated, initialConfig }: QueryBuilderPr
                   <Badge variant="outline">Solo Administrador</Badge>
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
-                  <pre className="text-sm font-mono whitespace-pre-wrap">{generatedSQL}</pre>
+                  <pre className="text-sm font-mono whitespace-pre-wrap">
+                    {generatedSQL}
+                  </pre>
                 </div>
               </div>
             </TabsContent>

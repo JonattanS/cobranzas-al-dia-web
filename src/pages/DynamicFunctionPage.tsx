@@ -17,11 +17,13 @@ const DynamicFunctionPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [module, setModule] = useState<PersistentModule | null>(null);
+
+  const [query, setQuery] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('filters');
   const [results, setResults] = useState<any[]>([]);
   const [filteredResults, setFilteredResults] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState({
     ter_nit: '',
     fecha_desde: '',
@@ -30,6 +32,48 @@ const DynamicFunctionPage = () => {
     min_valor: '',
     max_valor: ''
   });
+  const [module, setModule] = useState<any>(null);
+
+  const executeQuery = async (module?: PersistentModule) => {
+    let usedQuery = query;
+
+    // Si recibe un módulo, utiliza el query del módulo
+    if (module && module.query) {
+      usedQuery = module.query;
+      setQuery(module.query);
+    }
+    if (!usedQuery || !usedQuery.trim()) {
+      setError('No hay consulta para ejecutar');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const result = await databaseService.executeCustomQuery(usedQuery);
+      setResults(result);
+      setFilteredResults(result);
+      setActiveTab('filters');
+
+      toast({
+        title: "Query ejecutado",
+        description: `Se obtuvieron ${result.length} registros`,
+      });
+
+    } catch (err) {
+      const errorMessage = (err as Error).message;
+      setError(errorMessage);
+
+      toast({
+        title: "Error ejecutando query",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -58,39 +102,6 @@ const DynamicFunctionPage = () => {
       }
     }
   }, [id, navigate, toast]);
-
-  const executeQuery = async (moduleToExecute: PersistentModule) => {
-    if (!databaseService.isConfigured()) {
-      toast({
-        title: "Base de datos no configurada",
-        description: "Configura la conexión a la base de datos primero",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await databaseService.executeCustomQuery(moduleToExecute.query);
-      setResults(result);
-      setFilteredResults(result);
-
-      toast({
-        title: "Consulta ejecutada",
-        description: `Se obtuvieron ${result.length} registros`,
-      });
-    } catch (err) {
-      const errorMessage = (err as Error).message;
-      toast({
-        title: "Error ejecutando consulta",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const applyFilters = () => {
     let filtered = results;

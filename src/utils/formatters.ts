@@ -1,3 +1,17 @@
+import { schemaService } from '@/services/schemaService';
+
+export function formatCellValue(columnName: string, value: any): string {
+  const columnType = schemaService.getColumnType(columnName);
+  if (columnType === 'date' && typeof value === 'string') {
+    return value.split('T')[0];
+  }
+  return value?.toString() ?? '';
+}
+
+export function getColumnDescription(columnName: string): string {
+  const column = schemaService.getTableColumns().find(col => col.name === columnName);
+  return column?.description || columnName; // Si no hay descripción, usa el nombre
+}
 
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('es-CO', {

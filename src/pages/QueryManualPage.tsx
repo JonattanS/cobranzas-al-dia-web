@@ -84,17 +84,13 @@ const QueryManualPage = () => {
     setQuery(sql);
     setQueryConfig(config);
   };
-
   const executeQuery = async () => {
-    if (!databaseService.isConfigured()) {
-      setError('Base de datos no configurada');
-      return;
-    }
-
     if (!query.trim()) {
       setError('No hay consulta para ejecutar');
       return;
     }
+    
+    console.log(">>> Consulta enviada al backend:", query); // DEBUG
 
     setIsLoading(true);
     setError('');
@@ -123,6 +119,8 @@ const QueryManualPage = () => {
       setIsLoading(false);
     }
   };
+
+    
 
   const applyDynamicFilters = (filters: FilterValue[]) => {
     let filtered = [...results];

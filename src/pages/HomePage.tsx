@@ -1,14 +1,14 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Code, Database, FolderOpen, Plus } from 'lucide-react';
+import { Code, Database, FolderOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { DatabaseConfig } from '@/components/DatabaseConfig';
 import { ModuleCarousel } from '@/components/ModuleCarousel';
 import { ModuleRepository } from '@/components/ModuleRepository';
 import { databaseService } from '@/services/database';
 import { moduleService, type PersistentModule } from '@/services/moduleService';
+
+
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -16,18 +16,16 @@ const HomePage = () => {
   const [mostUsedModules, setMostUsedModules] = useState<PersistentModule[]>([]);
   const [personalModules, setPersonalModules] = useState<PersistentModule[]>([]);
   const [showRepository, setShowRepository] = useState(false);
+  // Agregados: Estado para clientes y error
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsDbConfigured(databaseService.isConfigured());
-    setMostUsedModules(moduleService.getMostUsedMainFunctions(6));
-    setPersonalModules(moduleService.getAllModules().filter(m => !m.isMainFunction));
+    // Consulta asíncrona para obtener los clientes usando el nuevo service
+    databaseService.getClientes()
+      .then(setClientes)
+      .catch(err => setError(err.message || 'Error desconocido'));
   }, []);
-
-  const handleDatabaseConfigured = () => {
-    setIsDbConfigured(true);
-    setMostUsedModules(moduleService.getMostUsedMainFunctions(6));
-    setPersonalModules(moduleService.getAllModules().filter(m => !m.isMainFunction));
-  };
 
   const handlePersonalModuleClick = (module: PersistentModule) => {
     navigate('/query-manual', { state: { loadModule: module } });
@@ -46,10 +44,9 @@ const HomePage = () => {
         <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
           Accede rápidamente a tus funciones principales y módulos personalizados
         </p>
+        {/* Mostrar mensaje de error si ocurre */}
+        
       </div>
-
-      {/* Configuración de Base de Datos */}
-      <DatabaseConfig onConfigured={handleDatabaseConfigured} />
 
       {/* Funciones Principales Más Usadas */}
       <div>
@@ -65,9 +62,45 @@ const HomePage = () => {
             <FolderOpen className="h-4 w-4 mr-2" />
             Ver Todas
           </Button>
-        </div>
-        
+        </div>        
         <ModuleCarousel modules={mostUsedModules} />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card 
+            className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-105 hover:-translate-y-1 border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+            onClick={() => navigate('/ConsultaDocumentosPage')} // Esto redirige directamente
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-blue-600 text-white shadow-lg">
+                  <Database className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
+                    Consulta de Documentos
+                  </CardTitle>
+                  <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">
+                    Función Principal
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="text-sm mb-4 text-slate-600 dark:text-slate-400">
+                Consulta avanzada de documentos contables con filtros personalizados.
+              </CardDescription>
+              
+              <div className="mt-6">
+                <Button 
+                  className="w-full shadow-lg transition-all duration-200" 
+                  variant="default"
+                >
+                  Ir a Consulta de Documentos
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+        </div>
       </div>
 
       {/* Herramientas de Desarrollo */}
@@ -89,26 +122,21 @@ const HomePage = () => {
                   <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
                     Query Manual
                   </CardTitle>
-                  {!isDbConfigured && (
-                    <span className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 px-2 py-1 rounded-full">
-                      Configurar BD
-                    </span>
-                  )}
+                  
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm mb-4 text-slate-600 dark:text-slate-400">
                 Ejecuta consultas SQL personalizadas y crea módulos reutilizables
-              </CardDescription>
-              
+              </CardDescription>              
               <div className="mt-6">
                 <Button 
                   className="w-full shadow-lg transition-all duration-200" 
-                  disabled={!isDbConfigured}
-                  variant={isDbConfigured ? "default" : "secondary"}
+                
+                  variant="default"
                 >
-                  {isDbConfigured ? 'Acceder al Editor' : 'Configurar BD primero'}
+                  Acceder al Editor
                 </Button>
               </div>
             </CardContent>
@@ -158,8 +186,7 @@ const HomePage = () => {
                 <CardContent>
                   <CardDescription className="text-sm mb-4 text-slate-600 dark:text-slate-400">
                     {module.description || 'Módulo personalizado creado desde Query Manual'}
-                  </CardDescription>
-                  
+                  </CardDescription>                  
                   <div className="space-y-2">
                     <p className="text-xs text-slate-500 dark:text-slate-500">
                       Creado: {new Date(module.createdAt).toLocaleDateString()}
@@ -168,7 +195,6 @@ const HomePage = () => {
                       Último uso: {new Date(module.lastUsed).toLocaleDateString()}
                     </p>
                   </div>
-
                   <div className="mt-4">
                     <Button className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-lg transition-all duration-200">
                       Ejecutar Módulo

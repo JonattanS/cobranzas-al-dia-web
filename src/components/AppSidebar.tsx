@@ -1,5 +1,5 @@
 
-import { BarChart3, Users, FileText, Home, CreditCard, Database, Zap } from 'lucide-react';
+import { BarChart3, Users, FileText, Home, CreditCard, Database, Zap, Search } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
@@ -14,28 +14,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { moduleService } from '@/services/moduleService';
+import { useUser } from '@/contexts/UserContext';
 
-const staticNavigation = [
-  {
-    title: 'Inicio',
-    url: '/',
-    icon: Home,
-  },
-  {
-    title: 'Cuentas por Cobrar',
-    url: '/cuentas-por-cobrar',
-    icon: CreditCard,
-  },
-  {
-    title: 'Cuentas por Pagar',
-    url: '/cuentas-por-pagar',
-    icon: FileText,
-  },
-  {
-    title: 'Clientes',
-    url: '/clientes',
-    icon: Users,
-  },
+
+const staticNavigation = [  
   {
     title: 'Consultas Manuales',
     url: '/query-manual',
@@ -43,10 +25,27 @@ const staticNavigation = [
   },
 ];
 
+const inicioNavigation = [
+  {
+    title: 'Inicio',
+    url: '/',
+    icon: Home,
+  },
+];
+
+const portafolioNavigation = [
+  {
+    title: 'Consulta de Documentos',
+    url: '/ConsultaDocumentosPage',
+    icon: Search,
+  },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
-  
+  // Obtener usuario y su compañía desde el contexto
+  const { user } = useUser();
   const [dynamicFunctions, setDynamicFunctions] = useState(moduleService.getMainFunctions());
 
   useEffect(() => {
@@ -66,16 +65,73 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="p-6">
           <div className={`${isCollapsed ? 'hidden' : 'block'}`}>
-            <h2 className="font-bold text-xl bg-[#F7722F] bg-clip-text text-transparent">
-              Nova
-            </h2>
-            <p className="text-sm text-[#F7722F] dark:text-slate-400 mt-1">Sistema Financiero</p>
+            <NavLink to="/"
+              className="font-bold text-xl bg-[#F7722F] bg-clip-text text-transparent cursor-pointer no-underline hover:underline">
+              {/* Si existe ciaraz mostrarlo, sino mostrar 'Nova' */}
+              {user?.ciaraz || 'Nova'}
+            </NavLink>
           </div>
         </div>
-        
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {inicioNavigation.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group text-slate-700 dark:text-slate-300 ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1'
+                        }`
+                      }
+                      end
+                    >
+                      <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
+                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel className={`${isCollapsed ? 'hidden' : 'block'} text-[#F7722F] dark:text-[#F7722F] font-semibold`}>
-            Módulos
+            Portafolio
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {portafolioNavigation.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group text-slate-700 dark:text-slate-300 ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 hover:translate-x-1'
+                        }`
+                      }
+                      end
+                    >
+                      <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
+                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className={`${isCollapsed ? 'hidden' : 'block'} text-[#F7722F] dark:text-[#F7722F] font-semibold`}>
+            Herramientas de Desarrollo
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

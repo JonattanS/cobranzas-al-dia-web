@@ -146,7 +146,7 @@ export const ModuleRepository = ({ onClose }: ModuleRepositoryProps) => {
           </Button>
           <div>
             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-              Repositorio de Módulos
+              Portafolios 
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Gestiona todos tus módulos y funciones principales

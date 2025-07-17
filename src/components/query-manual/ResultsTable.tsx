@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatCellValue } from '@/utils/formatters';
+import { getColumnDescription } from '@/utils/formatters';
 
 interface ResultsTableProps {
   results: any[];
@@ -65,7 +67,7 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
               <tr className="bg-gray-50">
                 {Object.keys(results[0]).map((key) => (
                   <th key={key} className="border border-gray-300 px-4 py-2 text-left font-medium">
-                    {key}
+                    {getColumnDescription(key)}
                   </th>
                 ))}
               </tr>
@@ -73,9 +75,9 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
             <tbody>
               {pageResults.map((row, index) => (
                 <tr key={startIndex + index} className="hover:bg-gray-50">
-                  {Object.values(row).map((value, cellIndex) => (
+                  {Object.keys(row).map((col, cellIndex) => (
                     <td key={cellIndex} className="border border-gray-300 px-4 py-2">
-                      {value?.toString() || ''}
+                      {formatCellValue(col, row[col])}
                     </td>
                   ))}
                 </tr>
