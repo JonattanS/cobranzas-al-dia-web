@@ -10,8 +10,8 @@ import { useUser } from "@/contexts/UserContext";
 import HomePage from "./pages/HomePage";
 import CuentasPorCobrarPage from "./pages/CuentasPorCobrarPage";
 import CuentasPorPagarPage from "./pages/CuentasPorPagarPage";
-import ClientesPage from "./pages/ClientesPage";
-import ClienteDetailPage from "./pages/ClienteDetailPage";
+
+
 import QueryManualPage from "./pages/QueryManualPage";
 import DynamicFunctionPage from "./pages/DynamicFunctionPage";
 import NotFound from "./pages/NotFound";
@@ -19,6 +19,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import { UserProvider } from "@/contexts/UserContext";
 import ConsultaDocumentosPage from "./pages/ConsultaDocumentosPage";
+import { ModuleRepository } from './components/ModuleRepository';
 
 const Demo = () => {
   const { user } = useUser();
@@ -84,6 +85,8 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   const { login } = useUser();
 
+  <Login onLogin={login} />
+
   return (
     <Routes>
       
@@ -95,6 +98,18 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <MainLayout>
             <HomePage />
+          </MainLayout>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/portafolios"
+      element={
+        <ProtectedRoute>
+          <MainLayout>
+            <ModuleRepository onClose={function (): void {
+              throw new Error("Function not implemented.");
+            } } />
           </MainLayout>
         </ProtectedRoute>
       }
@@ -125,26 +140,6 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <MainLayout>
             <ConsultaDocumentosPage />
-          </MainLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/clientes"
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <ClientesPage />
-          </MainLayout>
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/clientes/:nit"
-      element={
-        <ProtectedRoute>
-          <MainLayout>
-            <ClienteDetailPage />
           </MainLayout>
         </ProtectedRoute>
       }

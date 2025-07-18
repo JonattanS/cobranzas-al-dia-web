@@ -7,8 +7,7 @@ import { ModuleCarousel } from '@/components/ModuleCarousel';
 import { ModuleRepository } from '@/components/ModuleRepository';
 import { databaseService } from '@/services/database';
 import { moduleService, type PersistentModule } from '@/services/moduleService';
-
-
+import { useUser } from '@/contexts/UserContext';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -16,16 +15,12 @@ const HomePage = () => {
   const [mostUsedModules, setMostUsedModules] = useState<PersistentModule[]>([]);
   const [personalModules, setPersonalModules] = useState<PersistentModule[]>([]);
   const [showRepository, setShowRepository] = useState(false);
-  // Agregados: Estado para clientes y error
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Consulta asíncrona para obtener los clientes usando el nuevo service
-    databaseService.getClientes()
-      .then(setClientes)
-      .catch(err => setError(err.message || 'Error desconocido'));
-  }, []);
+
+  const { user } = useUser();
+  const userPortafolios = user?.portafolios || [];
+
+
 
   const handlePersonalModuleClick = (module: PersistentModule) => {
     navigate('/query-manual', { state: { loadModule: module } });
@@ -57,7 +52,7 @@ const HomePage = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setShowRepository(true)}
+            onClick={() => navigate('/portafolios')}
           >
             <FolderOpen className="h-4 w-4 mr-2" />
             Ver Todas
@@ -69,21 +64,7 @@ const HomePage = () => {
             className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-105 hover:-translate-y-1 border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
             onClick={() => navigate('/ConsultaDocumentosPage')} // Esto redirige directamente
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-3 rounded-xl bg-blue-600 text-white shadow-lg">
-                  <Database className="h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl text-slate-800 dark:text-slate-200">
-                    Consulta de Documentos
-                  </CardTitle>
-                  <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full">
-                    Función Principal
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
+            
             <CardContent>
               <CardDescription className="text-sm mb-4 text-slate-600 dark:text-slate-400">
                 Consulta avanzada de documentos contables con filtros personalizados.

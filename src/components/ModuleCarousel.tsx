@@ -61,16 +61,6 @@ export const ModuleCarousel = ({ modules }: ModuleCarouselProps) => {
         icon: Database,
         color: 'bg-emerald-500'
       });
-      
-      // Si tiene datos relacionados con clientes
-      if (module.query?.includes('ter_nit') || module.name.toLowerCase().includes('cliente')) {
-        sections.push({
-          key: 'clientes',
-          label: 'Clientes',
-          icon: Users,
-          color: 'bg-purple-500'
-        });
-      }
     }
     
     return sections;

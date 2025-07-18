@@ -1,7 +1,6 @@
-
-// Servicio para gestionar módulos persistentes en el código fuente
 export interface PersistentModule {
   id: string;
+  porcod?: number;
   name: string;
   description: string;
   query: string;
@@ -26,12 +25,32 @@ export interface ModuleFolder {
   name: string;
   createdAt: string;
   parentId?: string;
+  porcod?: number; // Añadido para relacionar folders con portafolios
 }
 
-// Módulos hardcodeados en el sistema - estos persisten entre reinicios
+const PORTFOLIOS = [
+  { id: '1', name: 'Portafolio financiero', porcod: 1 },
+  { id: '2', name: 'Portafolio de Nómina', porcod: 2 },
+  { id: '3', name: 'Portafolio de Inventarios', porcod: 3 },
+  { id: '9', name: 'Portafolio de Activos Fijos', porcod: 9 },
+  { id: '10', name: 'Portafolio de Compras', porcod: 10 },
+  { id: '11', name: 'Portafolio Comercial', porcod: 11 },
+  { id: '26', name: 'Gestión de Bienes y Servicios', porcod: 26 },
+];
+
+// Ajuste de fechas en formato ISO válido
+const DEFAULT_FOLDERS: ModuleFolder[] = PORTFOLIOS.map(p => ({
+  id: p.id,
+  name: p.name,
+  createdAt: '2025-07-17T00:00:00.000Z',
+  porcod: p.porcod
+}));
+
+// Modifica o añade tus módulos existentes para incluir folderId y opcionalmente porcod
 const PERSISTENT_MODULES: PersistentModule[] = [
   {
     id: 'cuentas-cobrar-detallado',
+    porcod: 1,
     name: 'Cuentas por Cobrar Detallado',
     description: 'Consulta detallada de cuentas por cobrar con filtros avanzados',
     query: `SELECT 
@@ -45,7 +64,7 @@ const PERSISTENT_MODULES: PersistentModule[] = [
     WHERE anf_cla = 1 AND anf_cre = 1 
     ORDER BY doc_fec DESC`,
     filters: {},
-    folderId: 'default-folder',
+    folderId: '1',
     createdAt: '2025-01-07T00:00:00.000Z',
     lastUsed: '2025-01-07T00:00:00.000Z',
     usageCount: 5,
@@ -53,6 +72,7 @@ const PERSISTENT_MODULES: PersistentModule[] = [
   },
   {
     id: 'resumen-terceros',
+    porcod: 1,
     name: 'Resumen por Terceros',
     description: 'Agrupación de saldos por tercero',
     query: `SELECT
@@ -66,19 +86,11 @@ const PERSISTENT_MODULES: PersistentModule[] = [
     HAVING SUM(mov_val) > 0
     ORDER BY saldo_total DESC`,
     filters: {},
-    folderId: 'default-folder',
+    folderId: '1',
     createdAt: '2025-01-07T00:00:00.000Z',
     lastUsed: '2025-01-07T00:00:00.000Z',
     usageCount: 3,
     isMainFunction: true
-  }
-];
-
-const DEFAULT_FOLDERS: ModuleFolder[] = [
-  {
-    id: 'default-folder',
-    name: 'General',
-    createdAt: '2025-01-07T00:00:00.000Z'
   }
 ];
 
@@ -101,7 +113,7 @@ class ModuleService {
       createdAt: new Date().toISOString(),
       lastUsed: new Date().toISOString(),
       usageCount: 0,
-      folderId: module.folderId || 'default-folder'
+      folderId: module.folderId || '1'  // Asigna carpeta por defecto si no se pasa
     };
     
     this.modules.push(newModule);
@@ -132,10 +144,10 @@ class ModuleService {
     return this.modules.filter(m => m.isMainFunction);
   }
 
-  getMostUsedMainFunctions(limit: number = 6): PersistentModule[] {
+  getMostUsedFunctions(limit: number = 6): PersistentModule[] {
     return this.modules
       .filter(m => m.isMainFunction)
-      .sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))
+      .sort((a, b) => (b.usageCount ?? 0) - (a.usageCount ?? 0))
       .slice(0, limit);
   }
 
@@ -157,16 +169,17 @@ class ModuleService {
     return false;
   }
 
-  // Folder management
+  // Carpetas / Portafolios management
   getAllFolders(): ModuleFolder[] {
     return this.folders;
   }
 
-  createFolder(name: string, parentId?: string): ModuleFolder {
+  createFolder(name: string, porcod?: number, parentId?: string): ModuleFolder {
     const newFolder: ModuleFolder = {
       id: `folder-${Date.now()}`,
       name,
       createdAt: new Date().toISOString(),
+      porcod,
       parentId
     };
     
@@ -177,13 +190,12 @@ class ModuleService {
   deleteFolder(id: string): boolean {
     const index = this.folders.findIndex(f => f.id === id);
     if (index !== -1) {
-      // Move modules from deleted folder to default folder
+      // Mover módulos afectados a carpeta default antes de eliminar
       this.modules.forEach(module => {
         if (module.folderId === id) {
-          module.folderId = 'default-folder';
+          module.folderId = '1';  // Default folder id
         }
       });
-      
       this.folders.splice(index, 1);
       return true;
     }

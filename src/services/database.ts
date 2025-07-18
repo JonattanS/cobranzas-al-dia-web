@@ -46,24 +46,6 @@ class DatabaseService {
     }
   }
 
-  async getClientes(): Promise<any[]> {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/clientes`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // Incluye el token si tu endpoint lo requiere:
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (!response.ok) throw new Error('Error al obtener clientes');
-      return await response.json();
-    } catch (error) {
-      console.error('Error obteniendo clientes:', error);
-      throw new Error('No se pudo obtener la lista de clientes desde el backend.');
-    }
-  }
-
   async consultaDocumentos(filtros: any): Promise<any[]> {
     const response = await fetch(`${BACKEND_URL}/api/consultadocumentos`, {
       method: 'POST',
