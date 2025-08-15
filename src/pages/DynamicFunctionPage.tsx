@@ -10,6 +10,8 @@ import { databaseService } from '@/services/database';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { getUserModules } from "@/services/userModulesApi"; 
+import { useUser } from '@/contexts/UserContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -33,6 +35,7 @@ const DynamicFunctionPage = () => {
     max_valor: ''
   });
   const [module, setModule] = useState<any>(null);
+  const { user } = useUser();
 
   const executeQuery = async (module?: PersistentModule) => {
     let usedQuery = query;
@@ -76,32 +79,68 @@ const DynamicFunctionPage = () => {
   };
 
   useEffect(() => {
-    if (id) {
-      const foundModule = moduleService.getModuleById(id);
-      if (foundModule) {
-        setModule(foundModule);
-        // Safely merge module filters with default filters
-        const moduleFilters = foundModule.filters || {};
-        setFilters({
-          ter_nit: moduleFilters.ter_nit || '',
-          fecha_desde: moduleFilters.fecha_desde || '',
-          fecha_hasta: moduleFilters.fecha_hasta || '',
-          clc_cod: moduleFilters.clc_cod || '',
-          min_valor: moduleFilters.min_valor || '',
-          max_valor: moduleFilters.max_valor || ''
-        });
-        executeQuery(foundModule);
-        moduleService.updateModuleLastUsed(id);
-      } else {
-        toast({
-          title: "Módulo no encontrado",
-          description: "El módulo solicitado no existe",
-          variant: "destructive",
-        });
-        navigate('/');
-      }
+  const loadModule = async () => {
+    const hardcodedModules = moduleService.getAllModules();
+    let backendModules: PersistentModule[] = [];
+    let backendError = false;
+
+    try {
+      backendModules = await getUserModules(user.token);
+    } catch (e) {
+      backendError = true;
+      toast({
+        title: "Error cargando módulos personalizados",
+        description: "No se pudieron obtener los módulos personalizados del servidor. Se mostrarán solo los predefinidos.",
+        variant: "destructive",
+      });
     }
-  }, [id, navigate, toast]);
+
+    // Combina y deduplica
+    const allModules: PersistentModule[] = [
+      ...backendModules,
+      ...hardcodedModules.filter(hm => !backendModules.some(bm => String(bm.id) === String(hm.id)))
+    ];
+
+    const foundModule = allModules.find(m => String(m.id) === String(id));
+
+    if (foundModule) {
+      setModule(foundModule);
+      setQuery(foundModule.query || "");
+
+      // Adaptar a tus nombres de filtro y formato según exactamente cómo estén guardados
+      const moduleFilters = Array.isArray(foundModule.filters) ? {} : (foundModule.filters || {});
+      setFilters({
+        ter_nit: moduleFilters.ter_nit || '',
+        fecha_desde: moduleFilters.fecha_desde || '',
+        fecha_hasta: moduleFilters.fecha_hasta || '',
+        clc_cod: moduleFilters.clc_cod || '',
+        min_valor: moduleFilters.min_valor || '',
+        max_valor: moduleFilters.max_valor || ''
+      });
+
+      // Ejecutar query sólo si lo tienes definido
+      if (foundModule.query) executeQuery(foundModule);
+
+      // Solo para hardcodeados
+      if (hardcodedModules.find(hm => String(hm.id) === String(foundModule.id))) {
+        moduleService.updateModuleLastUsed(foundModule.id);
+      }
+
+    } else {
+      // Si vino error del backend y no encontró el módulo, detalla el mensaje
+      toast({
+        title: backendError ? "Error general de conexión" : "Módulo no encontrado",
+        description: backendError
+          ? "No se encontraron módulos personalizados y hubo un error al conectar con el backend."
+          : "El módulo solicitado no existe.",
+        variant: "destructive",
+      });
+      navigate('/');
+    }
+  };
+
+  if (id && user?.token) loadModule();
+}, [id, user?.token, navigate, toast]);
 
   const applyFilters = () => {
     let filtered = results;

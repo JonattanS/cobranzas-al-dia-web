@@ -60,7 +60,7 @@ const PERSISTENT_MODULES: PersistentModule[] = [
       doc_num,
       mov_val,
       clc_cod
-    FROM public.con_mov 
+    FROM public.con_his 
     WHERE anf_cla = 1 AND anf_cre = 1 
     ORDER BY doc_fec DESC`,
     filters: {},
@@ -80,7 +80,7 @@ const PERSISTENT_MODULES: PersistentModule[] = [
       ter_raz,
       SUM(mov_val) AS saldo_total,
       COUNT(*) AS num_documentos
-    FROM public.con_mov
+    FROM public.con_his
     WHERE anf_cla = 1 AND anf_cre = 1
     GROUP BY ter_nit, ter_raz
     HAVING SUM(mov_val) > 0

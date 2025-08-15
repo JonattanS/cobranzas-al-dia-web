@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { moduleService, type PersistentModule, type ModuleFolder } from "@/services/moduleService"
+import { getUserModules } from '@/services/userModulesApi'  
 import { useUser } from "@/contexts/UserContext"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate } from "react-router-dom"
@@ -32,9 +33,10 @@ export const ModuleRepository = ({ onClose }: ModuleRepositoryProps) => {
   const portafoliosPermitidos: number[] = user?.portafolios || []
   const { toast } = useToast()
   const navigate = useNavigate()
+  
+  const [modules, setModules] = useState<PersistentModule[]>([]);
+  const [folders, setFolders] = useState<ModuleFolder[]>([]);
 
-  const [modules, setModules] = useState<PersistentModule[]>([])
-  const [folders, setFolders] = useState<ModuleFolder[]>([])
   const [selectedPortafolio, setSelectedPortafolio] = useState<ModuleFolder | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [showCreateFolder, setShowCreateFolder] = useState(false)
@@ -47,18 +49,49 @@ export const ModuleRepository = ({ onClose }: ModuleRepositoryProps) => {
     loadData()
   }, [user])
 
-  const loadData = () => {
-    setModules(moduleService.getAllModules())
-    const allFolders = moduleService.getAllFolders()
-    setFolders(allFolders.filter((f) => portafoliosPermitidos.includes(f.porcod ?? -1)))
+  function mergeModulesWithoutDuplicates(
+    hardcoded: PersistentModule[],
+    backend: PersistentModule[]
+  ): PersistentModule[] {
+    const backendIds = new Set(backend.map((m) => m.id));
+    return [...backend, ...hardcoded.filter((m) => !backendIds.has(m.id))];
   }
+
+  const loadData = async () => {
+    try {
+      const allFolders = moduleService.getAllFolders()
+      setFolders(allFolders.filter((f) => portafoliosPermitidos.includes(f.porcod ?? -1)))
+
+      // obtener modulos hardcoreados y todos los módulos desde el backend
+      const hardcodedModules = moduleService.getAllModules();
+      const backendModules = await getUserModules(user.token);
+
+      if (module.isMainFunction) {
+          navigate(`/dynamic-function/${module.id}`);
+      } else {
+          navigate('/query-manual', { state: { loadModule: module } });
+      }
+
+      // Combinar y evitar duplicados por id
+      const combinedModules = mergeModulesWithoutDuplicates(hardcodedModules, backendModules);
+
+      setModules(combinedModules);
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los módulos',
+        variant: 'destructive'
+      });
+    }
+  };
+
 
   const filteredModules = selectedPortafolio
     ? modules.filter(
         (m) =>
-          m.folderId === selectedPortafolio.id &&
+          m.porcod === selectedPortafolio.porcod &&
           (m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            m.description.toLowerCase().includes(searchTerm.toLowerCase())),
+          m.description.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     : []
 

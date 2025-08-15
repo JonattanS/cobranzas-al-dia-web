@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Save, Filter, FileText, BarChart3, Settings } from 'lucide-react';
 import { FilterConfigDialog } from './FilterConfigDialog';
 import { DashboardConfigDialog } from '../dashboard-config/DashboardConfigDialog';
+import { useUser } from '@/contexts/UserContext';
+import { moduleService } from '@/services/moduleService';
 
 interface FilterConfig {
   columnName: string;
@@ -26,6 +28,9 @@ interface SaveModuleDialogProps {
   setFilterConfig?: (config: FilterConfig[]) => void;
   dashboardConfig?: any;
   onConfigureDashboard?: () => void;
+  portafolio: number | null;
+  setPortafolio: (value: number | null) => void;
+
 }
 
 export const SaveModuleDialog = ({ 
@@ -38,12 +43,16 @@ export const SaveModuleDialog = ({
   filterConfig = [],
   setFilterConfig,
   dashboardConfig,
-  onConfigureDashboard
+  onConfigureDashboard,
+  portafolio,          
+  setPortafolio
 }: SaveModuleDialogProps) => {
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showDashboardDialog, setShowDashboardDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'filters' | 'dashboard'>('basic');
   const [currentDashboardConfig, setCurrentDashboardConfig] = useState(dashboardConfig || { charts: [], kpis: [] });
+  const PORTFOLIOS = moduleService.getAllFolders(); // Si ya está expuesto así
+  const { user } = useUser();
 
   const handleSave = () => {
     console.log('Guardando módulo con dashboard config:', currentDashboardConfig);
@@ -110,6 +119,25 @@ export const SaveModuleDialog = ({
                   rows={3}
                 />
               </div>
+
+              <div className="space-y-2 mt-4">
+                <Label>Portafolio *</Label>
+                <select
+                  value={portafolio ?? ''}
+                  onChange={(e) => setPortafolio(+e.target.value || null)}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Selecciona un portafolio</option>
+                  {PORTFOLIOS
+                    .filter(pf => user.portafolios.includes(pf.porcod))
+                    .map(p => (
+                      <option key={p.porcod} value={p.porcod}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
             </TabsContent>
 
             <TabsContent value="filters" className="space-y-4 mt-6">

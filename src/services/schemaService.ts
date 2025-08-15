@@ -1,5 +1,5 @@
 
-// Servicio para gestionar el esquema de la tabla con_mov
+// Servicio para gestionar el esquema de la tabla con_his
 export interface TableColumn {
   name: string;
   type: string;
@@ -25,8 +25,8 @@ export interface QueryConfiguration {
   limit?: number;
 }
 
-// Columnas de la tabla con_mov basadas en el esquema típico
-const CON_MOV_COLUMNS: TableColumn[] = [
+// Columnas de la tabla con_his basadas en el esquema típico
+const CON_HIS_COLUMNS: TableColumn[] = [
   { name: 'id', type: 'integer', description: 'Id del registro', isNumeric: true, isDate: false, isText: false },
   { name: 'adm_ciaid', type: 'integer', description: 'Compañía. Id asignado a la compañía.', isNumeric: true, isDate: false, isText: false },
   { name: 'suc_cod', type: 'varchar', description: 'Agencia. Sucursal/Agencia.', isNumeric: false, isDate: false, isText: true },
@@ -181,11 +181,11 @@ const OPERATORS = {
 
 class SchemaService {
   getTableColumns(): TableColumn[] {
-    return CON_MOV_COLUMNS;
+    return CON_HIS_COLUMNS;
   }
 
   getOperatorsForColumn(columnName: string): Array<{value: string, label: string}> {
-    const column = CON_MOV_COLUMNS.find(col => col.name === columnName);
+    const column = CON_HIS_COLUMNS.find(col => col.name === columnName);
     if (!column) return [];
 
     if (column.isNumeric) return OPERATORS.number;
@@ -197,7 +197,7 @@ class SchemaService {
     const { selectedFields, conditions, orderBy, groupBy, limit } = config;
 
     // SELECT clause
-    let sql = `SELECT ${selectedFields.length > 0 ? selectedFields.join(', ') : '*'}\nFROM public.con_mov`;
+    let sql = `SELECT ${selectedFields.length > 0 ? selectedFields.join(', ') : '*'}\nFROM public.con_his`;
 
     // WHERE clause
     if (conditions.length > 0) {
@@ -247,7 +247,7 @@ class SchemaService {
   }
 
   getColumnType(columnName: string): 'text' | 'number' | 'date' {
-    const column = CON_MOV_COLUMNS.find(col => col.name === columnName);
+    const column = CON_HIS_COLUMNS.find(col => col.name === columnName);
     if (!column) return 'text';
     
     if (column.isNumeric) return 'number';

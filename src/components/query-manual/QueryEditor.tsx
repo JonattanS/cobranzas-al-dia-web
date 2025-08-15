@@ -57,7 +57,7 @@ export const QueryEditor = ({
                 id="query"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="SELECT * FROM public.con_mov WHERE..."
+                placeholder="SELECT * FROM public.con_his WHERE..."
                 className="min-h-[200px] font-mono text-sm"
               />
             </div>

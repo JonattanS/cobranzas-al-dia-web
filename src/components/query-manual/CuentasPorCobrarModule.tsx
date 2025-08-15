@@ -24,7 +24,7 @@ export const CuentasPorCobrarModule = () => {
           doc_num as "Documento",
           mov_val as "Valor",
           clc_cod as "Código"
-        FROM public.con_mov 
+        FROM public.con_his 
         WHERE anf_cla = 1 AND anf_cre = 1 
         ORDER BY doc_fec DESC`,
         filters: {},
@@ -139,7 +139,7 @@ export const CuentasPorCobrarModule = () => {
           </div>
           {isRegistered && (
             <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-              ✅ Registrado
+              Registrado
             </Badge>
           )}
         </div>
